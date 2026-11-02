@@ -1,0 +1,227 @@
+{
+  "report_version": "agent-acceptance-v1",
+  "checked_at": "2026-11-01T04:45:32.643361+00:00",
+  "requested_mode": "online",
+  "configuration": {
+    "configured_mode": "qwen",
+    "provider": "qwen",
+    "model": "qwen3.7-flash",
+    "ready": true,
+    "reason": null,
+    "connectivity_verified": false,
+    "prompt_version": "department-v1",
+    "orchestration": {
+      "framework": "langgraph",
+      "scope": [
+        "repair_intake",
+        "engineering_suggestion"
+      ],
+      "checkpoint_enabled": false,
+      "supervisor": "deterministic_business_routing"
+    }
+  },
+  "synthetic_data": true,
+  "database_access": false,
+  "cases": [
+    {
+      "name": "企服：缺少位置时追问",
+      "passed": true,
+      "checks": {
+        "expected_execution_mode": true,
+        "missing_location": true,
+        "question_present": true,
+        "waits_for_input": true
+      },
+      "result": {
+        "location": null,
+        "issue_type": "漏水",
+        "description": "漏水",
+        "suggested_priority": "urgent",
+        "missing_fields": [
+          "location"
+        ],
+        "mode": "llm",
+        "ai": {
+          "agent": "service_agent",
+          "mode": "llm",
+          "prompt_version": "department-v1",
+          "provider": "qwen",
+          "model": "qwen3.7-flash",
+          "latency_ms": 1306,
+          "fallback_reason": null,
+          "usage": {
+            "prompt_tokens": 422,
+            "completion_tokens": 61,
+            "total_tokens": 483
+          },
+          "request_id": "chatcmpl-09b7e4e3-9f50-9f10-8627-030dc656e6e4"
+        },
+        "follow_up_question": "请提供具体的故障位置（如楼栋、房间号或设备名称）。",
+        "evidence": {
+          "issue_type": "漏水"
+        },
+        "orchestration": {
+          "framework": "langgraph",
+          "graph_version": "repair-intake-v1",
+          "persistence": "application_events",
+          "steps": [
+            {
+              "node": "service_review",
+              "status": "completed",
+              "summary": "企服检查信息完整性",
+              "mode": "llm"
+            },
+            {
+              "node": "wait_for_input",
+              "status": "waiting",
+              "summary": "等待补充：location"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "企服：补齐信息后等待人工确认",
+      "passed": true,
+      "checks": {
+        "expected_execution_mode": true,
+        "location_from_fixture": true,
+        "issue_present": true,
+        "no_missing_fields": true,
+        "no_extra_question": true,
+        "waits_for_human": true
+      },
+      "result": {
+        "location": "A栋302",
+        "issue_type": "漏水",
+        "description": "漏水；位置在A栋302",
+        "suggested_priority": "urgent",
+        "missing_fields": [],
+        "mode": "llm",
+        "ai": {
+          "agent": "service_agent",
+          "mode": "llm",
+          "prompt_version": "department-v1",
+          "provider": "qwen",
+          "model": "qwen3.7-flash",
+          "latency_ms": 1049,
+          "fallback_reason": null,
+          "usage": {
+            "prompt_tokens": 430,
+            "completion_tokens": 74,
+            "total_tokens": 504
+          },
+          "request_id": "chatcmpl-626f735c-08a9-9bca-92ee-4bbe590e5c18"
+        },
+        "follow_up_question": "",
+        "evidence": {
+          "location": "位置在A栋302",
+          "issue_type": "漏水"
+        },
+        "orchestration": {
+          "framework": "langgraph",
+          "graph_version": "repair-intake-v1",
+          "persistence": "application_events",
+          "steps": [
+            {
+              "node": "service_review",
+              "status": "completed",
+              "summary": "企服检查信息完整性",
+              "mode": "llm"
+            },
+            {
+              "node": "wait_for_confirmation",
+              "status": "waiting",
+              "summary": "信息齐全，等待人工核对建单；未创建工单"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "工程：查询证据后仅建议，等待人工分派",
+      "passed": false,
+      "checks": {
+        "expected_execution_mode": false,
+        "known_candidate_or_none": true,
+        "human_confirmation_required": true,
+        "bounded_calls": true,
+        "queried_directory": true,
+        "read_tool_result": true,
+        "waits_for_human": false
+      },
+      "result": {
+        "mode": "rule_fallback_demo",
+        "recommended_personnel": "ENG-VERIFY-001",
+        "recommended_name": "验收模拟水电员",
+        "reason": "固定模拟目录的规则基线，请人工核对",
+        "requires_human_confirmation": true,
+        "ai": {
+          "agent": "engineering_agent",
+          "mode": "rule_fallback_demo",
+          "prompt_version": "engineering-tools-v1",
+          "provider": "qwen",
+          "model": "qwen3.7-flash",
+          "latency_ms": 2917,
+          "fallback_reason": "invalid_output",
+          "request_attempted": true,
+          "usage": {
+            "prompt_tokens": 2253,
+            "completion_tokens": 132,
+            "total_tokens": 2385
+          }
+        },
+        "orchestration": {
+          "framework": "langgraph",
+          "graph_version": "engineering-tools-v1",
+          "persistence": "request_only",
+          "model_calls": 3,
+          "tool_calls": 2,
+          "stop_reason": "invalid_output",
+          "steps": [
+            {
+              "node": "engineering_handoff",
+              "status": "completed",
+              "summary": "已接收待分派工单，只读生成工程建议"
+            },
+            {
+              "node": "engineering_decide",
+              "status": "completed",
+              "summary": "工程模型选择查询或提交建议"
+            },
+            {
+              "node": "engineering_tools",
+              "tool": "list_engineers",
+              "status": "completed",
+              "summary": "查询活跃工程人员目录：1 人（模拟资料）"
+            },
+            {
+              "node": "engineering_decide",
+              "status": "completed",
+              "summary": "工程模型选择查询或提交建议"
+            },
+            {
+              "node": "engineering_tools",
+              "tool": "get_open_assignments",
+              "status": "completed",
+              "summary": "查询 ENG-VERIFY-001 当前未结束分派：2 单"
+            },
+            {
+              "node": "engineering_decide",
+              "status": "completed",
+              "summary": "工程模型选择查询或提交建议"
+            },
+            {
+              "node": "wait_for_dispatch_confirmation",
+              "status": "waiting",
+              "summary": "已使用规则建议，等待工程负责人确认"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "status": "checks_failed",
+  "human_review_required": true,
+  "scope": "企服缺项分支、补充后的人工门禁、工程只读工具建议；不覆盖业务写入和语义质量终审"
+}

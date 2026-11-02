@@ -1,0 +1,1855 @@
+{
+  "started_at": "2026-11-01T15:03:37.396723",
+  "base_url": "http://127.0.0.1:5174",
+  "runtime": {
+    "configured_mode": "qwen",
+    "provider": "qwen",
+    "model": "qwen3.7-flash",
+    "ready": true,
+    "reason": null,
+    "connectivity_verified": false,
+    "prompt_version": "department-v1",
+    "orchestration": {
+      "framework": "langgraph",
+      "scope": [
+        "repair_intake",
+        "engineering_suggestion"
+      ],
+      "checkpoint_enabled": false,
+      "supervisor": "deterministic_business_routing"
+    },
+    "api_features": [
+      "image_attachments",
+      "repair_feedback_read"
+    ],
+    "environment": {
+      "name": "isolated_demo",
+      "synthetic_data": true,
+      "volatile": true
+    }
+  },
+  "status": "api_acceptance_passed",
+  "synthetic_data_only": true,
+  "baseline_hashes": {
+    "/api/v1/agents/investment/customers": {
+      "1": "b77e5087080e2e86d58fb6e9d2b73b06557cd269f557c53fe5e4198cf6f74798"
+    },
+    "/api/v1/agents/investment/follow-ups": {
+      "1": "799792e04681fe50dcea66cb8933541768a4ce7432d7979b62aeb3feb36ce557"
+    },
+    "/api/v1/customer-handoffs": {
+      "1": "4ca042726880b4aa85f93a205b10990fbf3ebe384f29196e54b4f18437e4cfde"
+    },
+    "/api/v1/tickets": {
+      "1": "60e11df7c3b3b85f80e9cbc99a3dfdc48607be180f796b20eeac1da754bccd66"
+    }
+  },
+  "model_cases": [
+    {
+      "name": "named_customer_without_phone",
+      "message": "以下为虚构验收资料。客户名称：验收星桥科技。联系人：陈女士。明确意向租用园区200平方米办公室，计划下月入驻，希望安排带看。联系方式暂未提供，尚未签约。",
+      "http_status": 200,
+      "response": {
+        "mode": "llm",
+        "customer_name": "验收星桥科技",
+        "contact_name": "陈女士",
+        "contact_phone": null,
+        "source": "MVP验收模拟线索",
+        "intent_level": "A",
+        "follow_up_interval_days": 1,
+        "missing_fields": [],
+        "follow_up_subject": "跟进验收星桥科技陈女士的带看需求及联系方式补充",
+        "follow_up_description": "以下为虚构验收资料。客户名称：验收星桥科技。联系人：陈女士。明确意向租用园区200平方米办公室，计划下月入驻，希望安排带看。联系方式暂未提供，尚未签约。",
+        "ai": {
+          "agent": "investment_agent",
+          "mode": "llm",
+          "prompt_version": "department-v1",
+          "provider": "qwen",
+          "model": "qwen3.7-flash",
+          "latency_ms": 1873,
+          "fallback_reason": null,
+          "usage": {
+            "prompt_tokens": 592,
+            "completion_tokens": 137,
+            "total_tokens": 729
+          },
+          "request_id": "chatcmpl-e2347934-feee-98e0-92c1-af2db648c8bc"
+        },
+        "evidence": {
+          "customer_name": "客户名称：验收星桥科技",
+          "contact_name": "联系人：陈女士"
+        },
+        "intent_reason": "明确意向租用园区200平方米办公室，计划下月入驻，希望安排带看"
+      },
+      "checks_passed": true
+    },
+    {
+      "name": "missing_company_and_contact",
+      "message": "以下为虚构验收资料。客户名称、联系人、联系方式均未提供。目前仅初步了解园区办公空间，面积和入驻日期还没确定，请先整理待补充资料。",
+      "http_status": 200,
+      "response": {
+        "mode": "llm",
+        "customer_name": null,
+        "contact_name": null,
+        "contact_phone": null,
+        "source": "MVP验收模拟线索",
+        "intent_level": "C",
+        "follow_up_interval_days": 7,
+        "missing_fields": [
+          "customer_name"
+        ],
+        "follow_up_subject": "待补充客户名称、联系人及联系方式",
+        "follow_up_description": "以下为虚构验收资料。客户名称、联系人、联系方式均未提供。目前仅初步了解园区办公空间，面积和入驻日期还没确定，请先整理待补充资料。",
+        "ai": {
+          "agent": "investment_agent",
+          "mode": "llm",
+          "prompt_version": "department-v1",
+          "provider": "qwen",
+          "model": "qwen3.7-flash",
+          "latency_ms": 1322,
+          "fallback_reason": null,
+          "usage": {
+            "prompt_tokens": 582,
+            "completion_tokens": 85,
+            "total_tokens": 667
+          },
+          "request_id": "chatcmpl-de01cef0-1086-95ce-9838-6e1b6a3d0f8e"
+        },
+        "evidence": {},
+        "intent_reason": "原文仅提及“初步了解园区办公空间”，且面积和入驻日期未确定，符合初步了解阶段特征。"
+      },
+      "checks_passed": true
+    }
+  ],
+  "business_checks": [
+    {
+      "name": "missing_name_blocks_customer_creation",
+      "method": "POST",
+      "path": "/api/v1/agents/investment/confirm",
+      "http_status": 422,
+      "expected_status": 422,
+      "request": {
+        "customer_name": "",
+        "contact_name": "陈女士",
+        "contact_phone": null,
+        "source": "MVP验收模拟线索",
+        "follow_up_subject": "跟进验收星桥科技陈女士的带看需求及联系方式补充",
+        "follow_up_description": "以下为虚构验收资料。客户名称：验收星桥科技。联系人：陈女士。明确意向租用园区200平方米办公室，计划下月入驻，希望安排带看。联系方式暂未提供，尚未签约。",
+        "owner": "MVP验收-招商模拟员",
+        "intent_level": "A",
+        "idempotency_key": "20261101-150248-investment-acceptance:missing-name"
+      },
+      "response": {
+        "detail": [
+          {
+            "type": "string_too_short",
+            "loc": [
+              "body",
+              "customer_name"
+            ],
+            "msg": "String should have at least 1 character",
+            "input": "",
+            "ctx": {
+              "min_length": 1
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "authorized_simulated_customer_confirmation",
+      "method": "POST",
+      "path": "/api/v1/agents/investment/confirm",
+      "http_status": 200,
+      "expected_status": 200,
+      "request": {
+        "customer_name": "验收星桥科技",
+        "contact_name": "陈女士",
+        "contact_phone": null,
+        "source": "MVP验收模拟线索",
+        "follow_up_subject": "跟进验收星桥科技陈女士的带看需求及联系方式补充",
+        "follow_up_description": "以下为虚构验收资料。客户名称：验收星桥科技。联系人：陈女士。明确意向租用园区200平方米办公室，计划下月入驻，希望安排带看。联系方式暂未提供，尚未签约。",
+        "owner": "MVP验收-招商模拟员",
+        "intent_level": "A",
+        "idempotency_key": "20261101-150248-investment-acceptance:confirm"
+      },
+      "response": {
+        "workflow_id": "wf_f2b311d6a0f74cd890dc19f4",
+        "customer": {
+          "id": 2,
+          "customer_no": "KH202611010002",
+          "customer_name": "验收星桥科技",
+          "contact_name": "陈女士",
+          "contact_phone": null,
+          "stage": "lead",
+          "intent_level": "A",
+          "source": "MVP验收模拟线索",
+          "owner": "MVP验收-招商模拟员"
+        },
+        "follow_up_task": {
+          "id": 2,
+          "task_no": "GJ202611010002",
+          "customer_id": 2,
+          "subject": "跟进验收星桥科技陈女士的带看需求及联系方式补充",
+          "status": "pending",
+          "owner": "MVP验收-招商模拟员",
+          "due_at": "2026-11-02T15:05:34.358323"
+        },
+        "handoff_event_id": null
+      }
+    },
+    {
+      "name": "customer_confirmation_retry_is_idempotent",
+      "method": "POST",
+      "path": "/api/v1/agents/investment/confirm",
+      "http_status": 200,
+      "expected_status": 200,
+      "request": {
+        "customer_name": "验收星桥科技",
+        "contact_name": "陈女士",
+        "contact_phone": null,
+        "source": "MVP验收模拟线索",
+        "follow_up_subject": "跟进验收星桥科技陈女士的带看需求及联系方式补充",
+        "follow_up_description": "以下为虚构验收资料。客户名称：验收星桥科技。联系人：陈女士。明确意向租用园区200平方米办公室，计划下月入驻，希望安排带看。联系方式暂未提供，尚未签约。",
+        "owner": "MVP验收-招商模拟员",
+        "intent_level": "A",
+        "idempotency_key": "20261101-150248-investment-acceptance:confirm"
+      },
+      "response": {
+        "workflow_id": "wf_f2b311d6a0f74cd890dc19f4",
+        "customer": {
+          "id": 2,
+          "customer_no": "KH202611010002",
+          "customer_name": "验收星桥科技",
+          "contact_name": "陈女士",
+          "contact_phone": null,
+          "stage": "lead",
+          "intent_level": "A",
+          "source": "MVP验收模拟线索",
+          "owner": "MVP验收-招商模拟员"
+        },
+        "follow_up_task": {
+          "id": 2,
+          "task_no": "GJ202611010002",
+          "customer_id": 2,
+          "subject": "跟进验收星桥科技陈女士的带看需求及联系方式补充",
+          "status": "pending",
+          "owner": "MVP验收-招商模拟员",
+          "due_at": "2026-11-02T15:05:34.358323"
+        },
+        "handoff_event_id": null
+      }
+    },
+    {
+      "name": "blank_follow_up_outcome_rejected",
+      "method": "POST",
+      "path": "/api/v1/agents/investment/follow-ups/2/complete",
+      "http_status": 409,
+      "expected_status": 409,
+      "request": {
+        "actor": "MVP验收-招商模拟员",
+        "outcome": " ",
+        "idempotency_key": "20261101-150248-investment-acceptance:blank-outcome"
+      },
+      "response": {
+        "detail": "回访人员和回访结果不能为空"
+      }
+    },
+    {
+      "name": "simulated_follow_up_creates_next_task",
+      "method": "POST",
+      "path": "/api/v1/agents/investment/follow-ups/2/complete",
+      "http_status": 200,
+      "expected_status": 200,
+      "request": {
+        "actor": "MVP验收-招商模拟员",
+        "outcome": "验收模拟：已演练需求沟通，客户仍为意向阶段；实际未联系任何企业。",
+        "idempotency_key": "20261101-150248-investment-acceptance:follow-up"
+      },
+      "response": {
+        "record": {
+          "id": 1,
+          "task_id": 2,
+          "customer_id": 2,
+          "actor": "MVP验收-招商模拟员",
+          "outcome": "验收模拟：已演练需求沟通，客户仍为意向阶段；实际未联系任何企业。",
+          "occurred_at": "2026-11-01T15:05:34.520805"
+        },
+        "next_task": {
+          "id": 3,
+          "task_no": "GJ202611010003",
+          "subject": "跟进验收星桥科技陈女士的带看需求及联系方式补充",
+          "status": "pending",
+          "due_at": "2026-11-02T15:05:34.520072"
+        }
+      }
+    },
+    {
+      "name": "follow_up_retry_does_not_duplicate_record",
+      "method": "POST",
+      "path": "/api/v1/agents/investment/follow-ups/2/complete",
+      "http_status": 200,
+      "expected_status": 200,
+      "request": {
+        "actor": "MVP验收-招商模拟员",
+        "outcome": "验收模拟：已演练需求沟通，客户仍为意向阶段；实际未联系任何企业。",
+        "idempotency_key": "20261101-150248-investment-acceptance:follow-up"
+      },
+      "response": {
+        "record": {
+          "id": 1,
+          "task_id": 2,
+          "customer_id": 2,
+          "actor": "MVP验收-招商模拟员",
+          "outcome": "验收模拟：已演练需求沟通，客户仍为意向阶段；实际未联系任何企业。",
+          "occurred_at": "2026-11-01T15:05:34.520805"
+        },
+        "next_task": {
+          "id": 3,
+          "task_no": "GJ202611010003",
+          "subject": "跟进验收星桥科技陈女士的带看需求及联系方式补充",
+          "status": "pending",
+          "due_at": "2026-11-02T15:05:34.520072"
+        }
+      }
+    },
+    {
+      "name": "follow_up_history_preserved",
+      "method": "GET",
+      "path": "/api/v1/agents/investment/customers/2/follow-up-records",
+      "http_status": 200,
+      "expected_status": 200,
+      "request": null,
+      "response": [
+        {
+          "task_id": 2,
+          "customer_id": 2,
+          "outcome": "验收模拟：已演练需求沟通，客户仍为意向阶段；实际未联系任何企业。",
+          "idempotency_key": "20261101-150248-investment-acceptance:follow-up",
+          "id": 1,
+          "actor": "MVP验收-招商模拟员",
+          "next_task_id": 3,
+          "occurred_at": "2026-11-01T15:05:34.520805"
+        }
+      ]
+    },
+    {
+      "name": "open_formal_handoff_draft_only",
+      "method": "POST",
+      "path": "/api/v1/customers/2/handoff",
+      "http_status": 200,
+      "expected_status": 200,
+      "request": null,
+      "response": {
+        "id": 2,
+        "customer_id": 2,
+        "customer_name": "验收星桥科技",
+        "workflow_id": "wf_7d209235fec447bfbd3f6836",
+        "status": "draft",
+        "revision": 1,
+        "document": {
+          "contract_no": "",
+          "contract_version": "",
+          "contact_sheet_ref": "",
+          "contact_sheet_version": "",
+          "location": "",
+          "contact_name": "陈女士",
+          "contact_phone": "",
+          "service_requirements": "",
+          "agreements": ""
+        },
+        "check": {
+          "mode": "rule_fallback_demo",
+          "template_status": "demo_fields_pending_official_template",
+          "missing_fields": [
+            "contract_no",
+            "contract_version",
+            "contact_sheet_ref",
+            "contact_sheet_version",
+            "location",
+            "contact_phone",
+            "service_requirements",
+            "agreements"
+          ],
+          "missing_labels": [
+            "合同编号",
+            "合同版本",
+            "最终版客户联系单引用",
+            "联系单版本",
+            "入驻位置",
+            "联系方式",
+            "服务需求（无需求请明确填无）",
+            "约定事项（无约定请明确填无）"
+          ],
+          "next_action": "supplement"
+        },
+        "submitted_by": null,
+        "submitted_at": null,
+        "decided_by": null,
+        "decided_at": null,
+        "decision_comment": null,
+        "events": []
+      }
+    },
+    {
+      "name": "reopen_same_handoff_draft",
+      "method": "POST",
+      "path": "/api/v1/customers/2/handoff",
+      "http_status": 200,
+      "expected_status": 200,
+      "request": null,
+      "response": {
+        "id": 2,
+        "customer_id": 2,
+        "customer_name": "验收星桥科技",
+        "workflow_id": "wf_7d209235fec447bfbd3f6836",
+        "status": "draft",
+        "revision": 1,
+        "document": {
+          "contract_no": "",
+          "contract_version": "",
+          "contact_sheet_ref": "",
+          "contact_sheet_version": "",
+          "location": "",
+          "contact_name": "陈女士",
+          "contact_phone": "",
+          "service_requirements": "",
+          "agreements": ""
+        },
+        "check": {
+          "mode": "rule_fallback_demo",
+          "template_status": "demo_fields_pending_official_template",
+          "missing_fields": [
+            "contract_no",
+            "contract_version",
+            "contact_sheet_ref",
+            "contact_sheet_version",
+            "location",
+            "contact_phone",
+            "service_requirements",
+            "agreements"
+          ],
+          "missing_labels": [
+            "合同编号",
+            "合同版本",
+            "最终版客户联系单引用",
+            "联系单版本",
+            "入驻位置",
+            "联系方式",
+            "服务需求（无需求请明确填无）",
+            "约定事项（无约定请明确填无）"
+          ],
+          "next_action": "supplement"
+        },
+        "submitted_by": null,
+        "submitted_at": null,
+        "decided_by": null,
+        "decided_at": null,
+        "decision_comment": null,
+        "events": []
+      }
+    },
+    {
+      "name": "save_incomplete_contact_sheet",
+      "method": "PUT",
+      "path": "/api/v1/customer-handoffs/2",
+      "http_status": 200,
+      "expected_status": 200,
+      "request": {
+        "expected_revision": 1,
+        "document": {
+          "contract_no": "DEMO-HT-20261101-150248-investment-acceptance",
+          "contract_version": "v1",
+          "contact_sheet_ref": "DEMO-LXD-20261101-150248-investment-acceptance",
+          "contact_sheet_version": "v2",
+          "location": "模拟园区A栋502",
+          "contact_name": "陈女士",
+          "contact_phone": "验收模拟联系方式（不拨打）",
+          "service_requirements": "模拟需求：入驻后协助办理门禁",
+          "agreements": "仅用于验收，不代表真实合同或租赁承诺"
+        }
+      },
+      "response": {
+        "id": 2,
+        "customer_id": 2,
+        "customer_name": "验收星桥科技",
+        "workflow_id": "wf_7d209235fec447bfbd3f6836",
+        "status": "draft",
+        "revision": 2,
+        "document": {
+          "contract_no": "",
+          "contract_version": "v1",
+          "contact_sheet_ref": "DEMO-LXD-20261101-150248-investment-acceptance",
+          "contact_sheet_version": "v1",
+          "location": "模拟园区A栋501",
+          "contact_name": "陈女士",
+          "contact_phone": "验收模拟联系方式（不拨打）",
+          "service_requirements": "模拟需求：入驻后协助办理门禁",
+          "agreements": "仅用于验收，不代表真实合同或租赁承诺"
+        },
+        "check": {
+          "mode": "rule_fallback_demo",
+          "template_status": "demo_fields_pending_official_template",
+          "missing_fields": [
+            "contract_no"
+          ],
+          "missing_labels": [
+            "合同编号"
+          ],
+          "next_action": "supplement"
+        },
+        "submitted_by": null,
+        "submitted_at": null,
+        "decided_by": null,
+        "decided_at": null,
+        "decision_comment": null,
+        "events": []
+      }
+    },
+    {
+      "name": "missing_contract_blocks_formal_submission",
+      "method": "POST",
+      "path": "/api/v1/customer-handoffs/2/submit",
+      "http_status": 409,
+      "expected_status": 409,
+      "request": {
+        "expected_revision": 2,
+        "actor": "MVP验收-招商模拟员",
+        "contract_signed": true,
+        "idempotency_key": "20261101-150248-investment-acceptance:missing-contract"
+      },
+      "response": {
+        "detail": "联系单仍有缺失字段，请补充后提交"
+      }
+    },
+    {
+      "name": "save_complete_contact_sheet_v1",
+      "method": "PUT",
+      "path": "/api/v1/customer-handoffs/2",
+      "http_status": 200,
+      "expected_status": 200,
+      "request": {
+        "expected_revision": 2,
+        "document": {
+          "contract_no": "DEMO-HT-20261101-150248-investment-acceptance",
+          "contract_version": "v1",
+          "contact_sheet_ref": "DEMO-LXD-20261101-150248-investment-acceptance",
+          "contact_sheet_version": "v2",
+          "location": "模拟园区A栋502",
+          "contact_name": "陈女士",
+          "contact_phone": "验收模拟联系方式（不拨打）",
+          "service_requirements": "模拟需求：入驻后协助办理门禁",
+          "agreements": "仅用于验收，不代表真实合同或租赁承诺"
+        }
+      },
+      "response": {
+        "id": 2,
+        "customer_id": 2,
+        "customer_name": "验收星桥科技",
+        "workflow_id": "wf_7d209235fec447bfbd3f6836",
+        "status": "draft",
+        "revision": 3,
+        "document": {
+          "contract_no": "DEMO-HT-20261101-150248-investment-acceptance",
+          "contract_version": "v1",
+          "contact_sheet_ref": "DEMO-LXD-20261101-150248-investment-acceptance",
+          "contact_sheet_version": "v1",
+          "location": "模拟园区A栋501",
+          "contact_name": "陈女士",
+          "contact_phone": "验收模拟联系方式（不拨打）",
+          "service_requirements": "模拟需求：入驻后协助办理门禁",
+          "agreements": "仅用于验收，不代表真实合同或租赁承诺"
+        },
+        "check": {
+          "mode": "rule_fallback_demo",
+          "template_status": "demo_fields_pending_official_template",
+          "missing_fields": [],
+          "missing_labels": [],
+          "next_action": "human_confirm"
+        },
+        "submitted_by": null,
+        "submitted_at": null,
+        "decided_by": null,
+        "decided_at": null,
+        "decision_comment": null,
+        "events": []
+      }
+    },
+    {
+      "name": "stale_version_cannot_overwrite_contact_sheet",
+      "method": "PUT",
+      "path": "/api/v1/customer-handoffs/2",
+      "http_status": 409,
+      "expected_status": 409,
+      "request": {
+        "expected_revision": 2,
+        "document": {
+          "contract_no": "DEMO-HT-20261101-150248-investment-acceptance",
+          "contract_version": "v1",
+          "contact_sheet_ref": "DEMO-LXD-20261101-150248-investment-acceptance",
+          "contact_sheet_version": "v2",
+          "location": "模拟园区A栋502",
+          "contact_name": "陈女士",
+          "contact_phone": "验收模拟联系方式（不拨打）",
+          "service_requirements": "模拟需求：入驻后协助办理门禁",
+          "agreements": "仅用于验收，不代表真实合同或租赁承诺"
+        }
+      },
+      "response": {
+        "detail": "交接状态或版本已变化，请刷新后重试"
+      }
+    },
+    {
+      "name": "no_signing_confirmation_blocks_formal_submission",
+      "method": "POST",
+      "path": "/api/v1/customer-handoffs/2/submit",
+      "http_status": 409,
+      "expected_status": 409,
+      "request": {
+        "expected_revision": 3,
+        "actor": "MVP验收-招商模拟员",
+        "contract_signed": false,
+        "idempotency_key": "20261101-150248-investment-acceptance:unsigned"
+      },
+      "response": {
+        "detail": "正式交接需招商人员明确确认客户已签约"
+      }
+    },
+    {
+      "name": "authorized_simulated_signing_and_submission_v1",
+      "method": "POST",
+      "path": "/api/v1/customer-handoffs/2/submit",
+      "http_status": 200,
+      "expected_status": 200,
+      "request": {
+        "expected_revision": 3,
+        "actor": "MVP验收-招商模拟员",
+        "contract_signed": true,
+        "idempotency_key": "20261101-150248-investment-acceptance:submit-v1"
+      },
+      "response": {
+        "id": 2,
+        "customer_id": 2,
+        "customer_name": "验收星桥科技",
+        "workflow_id": "wf_7d209235fec447bfbd3f6836",
+        "status": "submitted",
+        "revision": 4,
+        "document": {
+          "contract_no": "DEMO-HT-20261101-150248-investment-acceptance",
+          "contract_version": "v1",
+          "contact_sheet_ref": "DEMO-LXD-20261101-150248-investment-acceptance",
+          "contact_sheet_version": "v1",
+          "location": "模拟园区A栋501",
+          "contact_name": "陈女士",
+          "contact_phone": "验收模拟联系方式（不拨打）",
+          "service_requirements": "模拟需求：入驻后协助办理门禁",
+          "agreements": "仅用于验收，不代表真实合同或租赁承诺"
+        },
+        "check": {
+          "mode": "rule_fallback_demo",
+          "template_status": "demo_fields_pending_official_template",
+          "missing_fields": [],
+          "missing_labels": [],
+          "next_action": "human_confirm"
+        },
+        "submitted_by": "MVP验收-招商模拟员",
+        "submitted_at": "2026-11-01T15:05:34.875478",
+        "decided_by": null,
+        "decided_at": null,
+        "decision_comment": null,
+        "events": [
+          {
+            "event_id": "evt_5b2dcea3d5cf40c79ed494b1",
+            "event_type": "customer.handoff.submitted",
+            "source_agent": "investment_agent",
+            "target_agent": "service_agent",
+            "payload": {
+              "document": {
+                "contract_no": "DEMO-HT-20261101-150248-investment-acceptance",
+                "contract_version": "v1",
+                "contact_sheet_ref": "DEMO-LXD-20261101-150248-investment-acceptance",
+                "contact_sheet_version": "v1",
+                "location": "模拟园区A栋501",
+                "contact_name": "陈女士",
+                "contact_phone": "验收模拟联系方式（不拨打）",
+                "service_requirements": "模拟需求：入驻后协助办理门禁",
+                "agreements": "仅用于验收，不代表真实合同或租赁承诺"
+              },
+              "contract_signed_confirmed": true,
+              "cancelled_follow_ups": 1,
+              "handoff_id": 2,
+              "customer_id": 2,
+              "actor": "MVP验收-招商模拟员",
+              "revision": 4,
+              "operation": "submit",
+              "request_digest": "90c282e339cc9bd678e7425810d9582f14f7841b544556283190a249a199a4a9"
+            },
+            "occurred_at": "2026-11-01T15:05:34.878390"
+          }
+        ]
+      }
+    },
+    {
+      "name": "submission_retry_keeps_one_event",
+      "method": "POST",
+      "path": "/api/v1/customer-handoffs/2/submit",
+      "http_status": 200,
+      "expected_status": 200,
+      "request": {
+        "expected_revision": 3,
+        "actor": "MVP验收-招商模拟员",
+        "contract_signed": true,
+        "idempotency_key": "20261101-150248-investment-acceptance:submit-v1"
+      },
+      "response": {
+        "id": 2,
+        "customer_id": 2,
+        "customer_name": "验收星桥科技",
+        "workflow_id": "wf_7d209235fec447bfbd3f6836",
+        "status": "submitted",
+        "revision": 4,
+        "document": {
+          "contract_no": "DEMO-HT-20261101-150248-investment-acceptance",
+          "contract_version": "v1",
+          "contact_sheet_ref": "DEMO-LXD-20261101-150248-investment-acceptance",
+          "contact_sheet_version": "v1",
+          "location": "模拟园区A栋501",
+          "contact_name": "陈女士",
+          "contact_phone": "验收模拟联系方式（不拨打）",
+          "service_requirements": "模拟需求：入驻后协助办理门禁",
+          "agreements": "仅用于验收，不代表真实合同或租赁承诺"
+        },
+        "check": {
+          "mode": "rule_fallback_demo",
+          "template_status": "demo_fields_pending_official_template",
+          "missing_fields": [],
+          "missing_labels": [],
+          "next_action": "human_confirm"
+        },
+        "submitted_by": "MVP验收-招商模拟员",
+        "submitted_at": "2026-11-01T15:05:34.875478",
+        "decided_by": null,
+        "decided_at": null,
+        "decision_comment": null,
+        "events": [
+          {
+            "event_id": "evt_5b2dcea3d5cf40c79ed494b1",
+            "event_type": "customer.handoff.submitted",
+            "source_agent": "investment_agent",
+            "target_agent": "service_agent",
+            "payload": {
+              "document": {
+                "contract_no": "DEMO-HT-20261101-150248-investment-acceptance",
+                "contract_version": "v1",
+                "contact_sheet_ref": "DEMO-LXD-20261101-150248-investment-acceptance",
+                "contact_sheet_version": "v1",
+                "location": "模拟园区A栋501",
+                "contact_name": "陈女士",
+                "contact_phone": "验收模拟联系方式（不拨打）",
+                "service_requirements": "模拟需求：入驻后协助办理门禁",
+                "agreements": "仅用于验收，不代表真实合同或租赁承诺"
+              },
+              "contract_signed_confirmed": true,
+              "cancelled_follow_ups": 1,
+              "handoff_id": 2,
+              "customer_id": 2,
+              "actor": "MVP验收-招商模拟员",
+              "revision": 4,
+              "operation": "submit",
+              "request_digest": "90c282e339cc9bd678e7425810d9582f14f7841b544556283190a249a199a4a9"
+            },
+            "occurred_at": "2026-11-01T15:05:34.878390"
+          }
+        ]
+      }
+    },
+    {
+      "name": "cancelled_follow_up_cannot_continue_after_signing",
+      "method": "POST",
+      "path": "/api/v1/agents/investment/follow-ups/3/complete",
+      "http_status": 409,
+      "expected_status": 409,
+      "request": {
+        "actor": "MVP验收-招商模拟员",
+        "outcome": "验收模拟：已演练需求沟通，客户仍为意向阶段；实际未联系任何企业。",
+        "idempotency_key": "20261101-150248-investment-acceptance:cancelled-follow-up"
+      },
+      "response": {
+        "detail": "跟进任务已经完成"
+      }
+    },
+    {
+      "name": "submitted_contact_sheet_is_frozen",
+      "method": "PUT",
+      "path": "/api/v1/customer-handoffs/2",
+      "http_status": 409,
+      "expected_status": 409,
+      "request": {
+        "expected_revision": 4,
+        "document": {
+          "contract_no": "DEMO-HT-20261101-150248-investment-acceptance",
+          "contract_version": "v1",
+          "contact_sheet_ref": "DEMO-LXD-20261101-150248-investment-acceptance",
+          "contact_sheet_version": "v2",
+          "location": "模拟园区A栋502",
+          "contact_name": "陈女士",
+          "contact_phone": "验收模拟联系方式（不拨打）",
+          "service_requirements": "模拟需求：入驻后协助办理门禁",
+          "agreements": "仅用于验收，不代表真实合同或租赁承诺"
+        }
+      },
+      "response": {
+        "detail": "交接状态或版本已变化，请刷新后重试"
+      }
+    },
+    {
+      "name": "service_receipt_requires_comment",
+      "method": "POST",
+      "path": "/api/v1/customer-handoffs/2/decide",
+      "http_status": 422,
+      "expected_status": 422,
+      "request": {
+        "expected_revision": 4,
+        "actor": "MVP验收-企服模拟员",
+        "accepted": true,
+        "comment": "",
+        "idempotency_key": "20261101-150248-investment-acceptance:empty-decision"
+      },
+      "response": {
+        "detail": [
+          {
+            "type": "string_too_short",
+            "loc": [
+              "body",
+              "comment"
+            ],
+            "msg": "String should have at least 1 character",
+            "input": "",
+            "ctx": {
+              "min_length": 1
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "service_returns_v1_with_specific_reason",
+      "method": "POST",
+      "path": "/api/v1/customer-handoffs/2/decide",
+      "http_status": 200,
+      "expected_status": 200,
+      "request": {
+        "expected_revision": 4,
+        "actor": "MVP验收-企服模拟员",
+        "accepted": false,
+        "comment": "验收模拟：入驻房间需由501更正为502，请更新联系单版本。",
+        "idempotency_key": "20261101-150248-investment-acceptance:return"
+      },
+      "response": {
+        "id": 2,
+        "customer_id": 2,
+        "customer_name": "验收星桥科技",
+        "workflow_id": "wf_7d209235fec447bfbd3f6836",
+        "status": "returned",
+        "revision": 5,
+        "document": {
+          "contract_no": "DEMO-HT-20261101-150248-investment-acceptance",
+          "contract_version": "v1",
+          "contact_sheet_ref": "DEMO-LXD-20261101-150248-investment-acceptance",
+          "contact_sheet_version": "v1",
+          "location": "模拟园区A栋501",
+          "contact_name": "陈女士",
+          "contact_phone": "验收模拟联系方式（不拨打）",
+          "service_requirements": "模拟需求：入驻后协助办理门禁",
+          "agreements": "仅用于验收，不代表真实合同或租赁承诺"
+        },
+        "check": {
+          "mode": "rule_fallback_demo",
+          "template_status": "demo_fields_pending_official_template",
+          "missing_fields": [],
+          "missing_labels": [],
+          "next_action": "human_confirm"
+        },
+        "submitted_by": "MVP验收-招商模拟员",
+        "submitted_at": "2026-11-01T15:05:34.875478",
+        "decided_by": "MVP验收-企服模拟员",
+        "decided_at": "2026-11-01T15:05:35.122273",
+        "decision_comment": "验收模拟：入驻房间需由501更正为502，请更新联系单版本。",
+        "events": [
+          {
+            "event_id": "evt_5b2dcea3d5cf40c79ed494b1",
+            "event_type": "customer.handoff.submitted",
+            "source_agent": "investment_agent",
+            "target_agent": "service_agent",
+            "payload": {
+              "document": {
+                "contract_no": "DEMO-HT-20261101-150248-investment-acceptance",
+                "contract_version": "v1",
+                "contact_sheet_ref": "DEMO-LXD-20261101-150248-investment-acceptance",
+                "contact_sheet_version": "v1",
+                "location": "模拟园区A栋501",
+                "contact_name": "陈女士",
+                "contact_phone": "验收模拟联系方式（不拨打）",
+                "service_requirements": "模拟需求：入驻后协助办理门禁",
+                "agreements": "仅用于验收，不代表真实合同或租赁承诺"
+              },
+              "contract_signed_confirmed": true,
+              "cancelled_follow_ups": 1,
+              "handoff_id": 2,
+              "customer_id": 2,
+              "actor": "MVP验收-招商模拟员",
+              "revision": 4,
+              "operation": "submit",
+              "request_digest": "90c282e339cc9bd678e7425810d9582f14f7841b544556283190a249a199a4a9"
+            },
+            "occurred_at": "2026-11-01T15:05:34.878390"
+          },
+          {
+            "event_id": "evt_d0c08238d90d4d448f65bcb3",
+            "event_type": "customer.handoff.returned",
+            "source_agent": "service_agent",
+            "target_agent": "investment_agent",
+            "payload": {
+              "accepted": false,
+              "comment": "验收模拟：入驻房间需由501更正为502，请更新联系单版本。",
+              "document": {
+                "contract_no": "DEMO-HT-20261101-150248-investment-acceptance",
+                "contract_version": "v1",
+                "contact_sheet_ref": "DEMO-LXD-20261101-150248-investment-acceptance",
+                "contact_sheet_version": "v1",
+                "location": "模拟园区A栋501",
+                "contact_name": "陈女士",
+                "contact_phone": "验收模拟联系方式（不拨打）",
+                "service_requirements": "模拟需求：入驻后协助办理门禁",
+                "agreements": "仅用于验收，不代表真实合同或租赁承诺"
+              },
+              "handoff_id": 2,
+              "customer_id": 2,
+              "actor": "MVP验收-企服模拟员",
+              "revision": 5,
+              "operation": "decide",
+              "request_digest": "e0f494574d2839eb3d889732363acb0640d150e44ab48aa00a478da99b29fef6"
+            },
+            "occurred_at": "2026-11-01T15:05:35.124551"
+          }
+        ]
+      }
+    },
+    {
+      "name": "return_retry_does_not_duplicate_event",
+      "method": "POST",
+      "path": "/api/v1/customer-handoffs/2/decide",
+      "http_status": 200,
+      "expected_status": 200,
+      "request": {
+        "expected_revision": 4,
+        "actor": "MVP验收-企服模拟员",
+        "accepted": false,
+        "comment": "验收模拟：入驻房间需由501更正为502，请更新联系单版本。",
+        "idempotency_key": "20261101-150248-investment-acceptance:return"
+      },
+      "response": {
+        "id": 2,
+        "customer_id": 2,
+        "customer_name": "验收星桥科技",
+        "workflow_id": "wf_7d209235fec447bfbd3f6836",
+        "status": "returned",
+        "revision": 5,
+        "document": {
+          "contract_no": "DEMO-HT-20261101-150248-investment-acceptance",
+          "contract_version": "v1",
+          "contact_sheet_ref": "DEMO-LXD-20261101-150248-investment-acceptance",
+          "contact_sheet_version": "v1",
+          "location": "模拟园区A栋501",
+          "contact_name": "陈女士",
+          "contact_phone": "验收模拟联系方式（不拨打）",
+          "service_requirements": "模拟需求：入驻后协助办理门禁",
+          "agreements": "仅用于验收，不代表真实合同或租赁承诺"
+        },
+        "check": {
+          "mode": "rule_fallback_demo",
+          "template_status": "demo_fields_pending_official_template",
+          "missing_fields": [],
+          "missing_labels": [],
+          "next_action": "human_confirm"
+        },
+        "submitted_by": "MVP验收-招商模拟员",
+        "submitted_at": "2026-11-01T15:05:34.875478",
+        "decided_by": "MVP验收-企服模拟员",
+        "decided_at": "2026-11-01T15:05:35.122273",
+        "decision_comment": "验收模拟：入驻房间需由501更正为502，请更新联系单版本。",
+        "events": [
+          {
+            "event_id": "evt_5b2dcea3d5cf40c79ed494b1",
+            "event_type": "customer.handoff.submitted",
+            "source_agent": "investment_agent",
+            "target_agent": "service_agent",
+            "payload": {
+              "document": {
+                "contract_no": "DEMO-HT-20261101-150248-investment-acceptance",
+                "contract_version": "v1",
+                "contact_sheet_ref": "DEMO-LXD-20261101-150248-investment-acceptance",
+                "contact_sheet_version": "v1",
+                "location": "模拟园区A栋501",
+                "contact_name": "陈女士",
+                "contact_phone": "验收模拟联系方式（不拨打）",
+                "service_requirements": "模拟需求：入驻后协助办理门禁",
+                "agreements": "仅用于验收，不代表真实合同或租赁承诺"
+              },
+              "contract_signed_confirmed": true,
+              "cancelled_follow_ups": 1,
+              "handoff_id": 2,
+              "customer_id": 2,
+              "actor": "MVP验收-招商模拟员",
+              "revision": 4,
+              "operation": "submit",
+              "request_digest": "90c282e339cc9bd678e7425810d9582f14f7841b544556283190a249a199a4a9"
+            },
+            "occurred_at": "2026-11-01T15:05:34.878390"
+          },
+          {
+            "event_id": "evt_d0c08238d90d4d448f65bcb3",
+            "event_type": "customer.handoff.returned",
+            "source_agent": "service_agent",
+            "target_agent": "investment_agent",
+            "payload": {
+              "accepted": false,
+              "comment": "验收模拟：入驻房间需由501更正为502，请更新联系单版本。",
+              "document": {
+                "contract_no": "DEMO-HT-20261101-150248-investment-acceptance",
+                "contract_version": "v1",
+                "contact_sheet_ref": "DEMO-LXD-20261101-150248-investment-acceptance",
+                "contact_sheet_version": "v1",
+                "location": "模拟园区A栋501",
+                "contact_name": "陈女士",
+                "contact_phone": "验收模拟联系方式（不拨打）",
+                "service_requirements": "模拟需求：入驻后协助办理门禁",
+                "agreements": "仅用于验收，不代表真实合同或租赁承诺"
+              },
+              "handoff_id": 2,
+              "customer_id": 2,
+              "actor": "MVP验收-企服模拟员",
+              "revision": 5,
+              "operation": "decide",
+              "request_digest": "e0f494574d2839eb3d889732363acb0640d150e44ab48aa00a478da99b29fef6"
+            },
+            "occurred_at": "2026-11-01T15:05:35.124551"
+          }
+        ]
+      }
+    },
+    {
+      "name": "investment_corrects_contact_sheet_v2",
+      "method": "PUT",
+      "path": "/api/v1/customer-handoffs/2",
+      "http_status": 200,
+      "expected_status": 200,
+      "request": {
+        "expected_revision": 5,
+        "document": {
+          "contract_no": "DEMO-HT-20261101-150248-investment-acceptance",
+          "contract_version": "v1",
+          "contact_sheet_ref": "DEMO-LXD-20261101-150248-investment-acceptance",
+          "contact_sheet_version": "v2",
+          "location": "模拟园区A栋502",
+          "contact_name": "陈女士",
+          "contact_phone": "验收模拟联系方式（不拨打）",
+          "service_requirements": "模拟需求：入驻后协助办理门禁",
+          "agreements": "仅用于验收，不代表真实合同或租赁承诺"
+        }
+      },
+      "response": {
+        "id": 2,
+        "customer_id": 2,
+        "customer_name": "验收星桥科技",
+        "workflow_id": "wf_7d209235fec447bfbd3f6836",
+        "status": "returned",
+        "revision": 6,
+        "document": {
+          "contract_no": "DEMO-HT-20261101-150248-investment-acceptance",
+          "contract_version": "v1",
+          "contact_sheet_ref": "DEMO-LXD-20261101-150248-investment-acceptance",
+          "contact_sheet_version": "v2",
+          "location": "模拟园区A栋502",
+          "contact_name": "陈女士",
+          "contact_phone": "验收模拟联系方式（不拨打）",
+          "service_requirements": "模拟需求：入驻后协助办理门禁",
+          "agreements": "仅用于验收，不代表真实合同或租赁承诺"
+        },
+        "check": {
+          "mode": "rule_fallback_demo",
+          "template_status": "demo_fields_pending_official_template",
+          "missing_fields": [],
+          "missing_labels": [],
+          "next_action": "human_confirm"
+        },
+        "submitted_by": "MVP验收-招商模拟员",
+        "submitted_at": "2026-11-01T15:05:34.875478",
+        "decided_by": "MVP验收-企服模拟员",
+        "decided_at": "2026-11-01T15:05:35.122273",
+        "decision_comment": "验收模拟：入驻房间需由501更正为502，请更新联系单版本。",
+        "events": [
+          {
+            "event_id": "evt_5b2dcea3d5cf40c79ed494b1",
+            "event_type": "customer.handoff.submitted",
+            "source_agent": "investment_agent",
+            "target_agent": "service_agent",
+            "payload": {
+              "document": {
+                "contract_no": "DEMO-HT-20261101-150248-investment-acceptance",
+                "contract_version": "v1",
+                "contact_sheet_ref": "DEMO-LXD-20261101-150248-investment-acceptance",
+                "contact_sheet_version": "v1",
+                "location": "模拟园区A栋501",
+                "contact_name": "陈女士",
+                "contact_phone": "验收模拟联系方式（不拨打）",
+                "service_requirements": "模拟需求：入驻后协助办理门禁",
+                "agreements": "仅用于验收，不代表真实合同或租赁承诺"
+              },
+              "contract_signed_confirmed": true,
+              "cancelled_follow_ups": 1,
+              "handoff_id": 2,
+              "customer_id": 2,
+              "actor": "MVP验收-招商模拟员",
+              "revision": 4,
+              "operation": "submit",
+              "request_digest": "90c282e339cc9bd678e7425810d9582f14f7841b544556283190a249a199a4a9"
+            },
+            "occurred_at": "2026-11-01T15:05:34.878390"
+          },
+          {
+            "event_id": "evt_d0c08238d90d4d448f65bcb3",
+            "event_type": "customer.handoff.returned",
+            "source_agent": "service_agent",
+            "target_agent": "investment_agent",
+            "payload": {
+              "accepted": false,
+              "comment": "验收模拟：入驻房间需由501更正为502，请更新联系单版本。",
+              "document": {
+                "contract_no": "DEMO-HT-20261101-150248-investment-acceptance",
+                "contract_version": "v1",
+                "contact_sheet_ref": "DEMO-LXD-20261101-150248-investment-acceptance",
+                "contact_sheet_version": "v1",
+                "location": "模拟园区A栋501",
+                "contact_name": "陈女士",
+                "contact_phone": "验收模拟联系方式（不拨打）",
+                "service_requirements": "模拟需求：入驻后协助办理门禁",
+                "agreements": "仅用于验收，不代表真实合同或租赁承诺"
+              },
+              "handoff_id": 2,
+              "customer_id": 2,
+              "actor": "MVP验收-企服模拟员",
+              "revision": 5,
+              "operation": "decide",
+              "request_digest": "e0f494574d2839eb3d889732363acb0640d150e44ab48aa00a478da99b29fef6"
+            },
+            "occurred_at": "2026-11-01T15:05:35.124551"
+          }
+        ]
+      }
+    },
+    {
+      "name": "investment_resubmits_corrected_v2",
+      "method": "POST",
+      "path": "/api/v1/customer-handoffs/2/submit",
+      "http_status": 200,
+      "expected_status": 200,
+      "request": {
+        "expected_revision": 6,
+        "actor": "MVP验收-招商模拟员",
+        "contract_signed": true,
+        "idempotency_key": "20261101-150248-investment-acceptance:submit-v2"
+      },
+      "response": {
+        "id": 2,
+        "customer_id": 2,
+        "customer_name": "验收星桥科技",
+        "workflow_id": "wf_7d209235fec447bfbd3f6836",
+        "status": "submitted",
+        "revision": 7,
+        "document": {
+          "contract_no": "DEMO-HT-20261101-150248-investment-acceptance",
+          "contract_version": "v1",
+          "contact_sheet_ref": "DEMO-LXD-20261101-150248-investment-acceptance",
+          "contact_sheet_version": "v2",
+          "location": "模拟园区A栋502",
+          "contact_name": "陈女士",
+          "contact_phone": "验收模拟联系方式（不拨打）",
+          "service_requirements": "模拟需求：入驻后协助办理门禁",
+          "agreements": "仅用于验收，不代表真实合同或租赁承诺"
+        },
+        "check": {
+          "mode": "rule_fallback_demo",
+          "template_status": "demo_fields_pending_official_template",
+          "missing_fields": [],
+          "missing_labels": [],
+          "next_action": "human_confirm"
+        },
+        "submitted_by": "MVP验收-招商模拟员",
+        "submitted_at": "2026-11-01T15:05:35.260446",
+        "decided_by": "MVP验收-企服模拟员",
+        "decided_at": "2026-11-01T15:05:35.122273",
+        "decision_comment": "验收模拟：入驻房间需由501更正为502，请更新联系单版本。",
+        "events": [
+          {
+            "event_id": "evt_5b2dcea3d5cf40c79ed494b1",
+            "event_type": "customer.handoff.submitted",
+            "source_agent": "investment_agent",
+            "target_agent": "service_agent",
+            "payload": {
+              "document": {
+                "contract_no": "DEMO-HT-20261101-150248-investment-acceptance",
+                "contract_version": "v1",
+                "contact_sheet_ref": "DEMO-LXD-20261101-150248-investment-acceptance",
+                "contact_sheet_version": "v1",
+                "location": "模拟园区A栋501",
+                "contact_name": "陈女士",
+                "contact_phone": "验收模拟联系方式（不拨打）",
+                "service_requirements": "模拟需求：入驻后协助办理门禁",
+                "agreements": "仅用于验收，不代表真实合同或租赁承诺"
+              },
+              "contract_signed_confirmed": true,
+              "cancelled_follow_ups": 1,
+              "handoff_id": 2,
+              "customer_id": 2,
+              "actor": "MVP验收-招商模拟员",
+              "revision": 4,
+              "operation": "submit",
+              "request_digest": "90c282e339cc9bd678e7425810d9582f14f7841b544556283190a249a199a4a9"
+            },
+            "occurred_at": "2026-11-01T15:05:34.878390"
+          },
+          {
+            "event_id": "evt_d0c08238d90d4d448f65bcb3",
+            "event_type": "customer.handoff.returned",
+            "source_agent": "service_agent",
+            "target_agent": "investment_agent",
+            "payload": {
+              "accepted": false,
+              "comment": "验收模拟：入驻房间需由501更正为502，请更新联系单版本。",
+              "document": {
+                "contract_no": "DEMO-HT-20261101-150248-investment-acceptance",
+                "contract_version": "v1",
+                "contact_sheet_ref": "DEMO-LXD-20261101-150248-investment-acceptance",
+                "contact_sheet_version": "v1",
+                "location": "模拟园区A栋501",
+                "contact_name": "陈女士",
+                "contact_phone": "验收模拟联系方式（不拨打）",
+                "service_requirements": "模拟需求：入驻后协助办理门禁",
+                "agreements": "仅用于验收，不代表真实合同或租赁承诺"
+              },
+              "handoff_id": 2,
+              "customer_id": 2,
+              "actor": "MVP验收-企服模拟员",
+              "revision": 5,
+              "operation": "decide",
+              "request_digest": "e0f494574d2839eb3d889732363acb0640d150e44ab48aa00a478da99b29fef6"
+            },
+            "occurred_at": "2026-11-01T15:05:35.124551"
+          },
+          {
+            "event_id": "evt_50b1843cfb6444f99182376f",
+            "event_type": "customer.handoff.submitted",
+            "source_agent": "investment_agent",
+            "target_agent": "service_agent",
+            "payload": {
+              "document": {
+                "contract_no": "DEMO-HT-20261101-150248-investment-acceptance",
+                "contract_version": "v1",
+                "contact_sheet_ref": "DEMO-LXD-20261101-150248-investment-acceptance",
+                "contact_sheet_version": "v2",
+                "location": "模拟园区A栋502",
+                "contact_name": "陈女士",
+                "contact_phone": "验收模拟联系方式（不拨打）",
+                "service_requirements": "模拟需求：入驻后协助办理门禁",
+                "agreements": "仅用于验收，不代表真实合同或租赁承诺"
+              },
+              "contract_signed_confirmed": true,
+              "cancelled_follow_ups": 0,
+              "handoff_id": 2,
+              "customer_id": 2,
+              "actor": "MVP验收-招商模拟员",
+              "revision": 7,
+              "operation": "submit",
+              "request_digest": "73063b49a828593b08d5c75d3b32475da1809d0dbcd9c419874a08cc888d3f85"
+            },
+            "occurred_at": "2026-11-01T15:05:35.262653"
+          }
+        ]
+      }
+    },
+    {
+      "name": "service_accepts_corrected_v2",
+      "method": "POST",
+      "path": "/api/v1/customer-handoffs/2/decide",
+      "http_status": 200,
+      "expected_status": 200,
+      "request": {
+        "expected_revision": 7,
+        "actor": "MVP验收-企服模拟员",
+        "accepted": true,
+        "comment": "验收模拟：已核对更正后的联系单v2，接收资料用于演示。",
+        "idempotency_key": "20261101-150248-investment-acceptance:accept"
+      },
+      "response": {
+        "id": 2,
+        "customer_id": 2,
+        "customer_name": "验收星桥科技",
+        "workflow_id": "wf_7d209235fec447bfbd3f6836",
+        "status": "accepted",
+        "revision": 8,
+        "document": {
+          "contract_no": "DEMO-HT-20261101-150248-investment-acceptance",
+          "contract_version": "v1",
+          "contact_sheet_ref": "DEMO-LXD-20261101-150248-investment-acceptance",
+          "contact_sheet_version": "v2",
+          "location": "模拟园区A栋502",
+          "contact_name": "陈女士",
+          "contact_phone": "验收模拟联系方式（不拨打）",
+          "service_requirements": "模拟需求：入驻后协助办理门禁",
+          "agreements": "仅用于验收，不代表真实合同或租赁承诺"
+        },
+        "check": {
+          "mode": "rule_fallback_demo",
+          "template_status": "demo_fields_pending_official_template",
+          "missing_fields": [],
+          "missing_labels": [],
+          "next_action": "human_confirm"
+        },
+        "submitted_by": "MVP验收-招商模拟员",
+        "submitted_at": "2026-11-01T15:05:35.260446",
+        "decided_by": "MVP验收-企服模拟员",
+        "decided_at": "2026-11-01T15:05:35.290920",
+        "decision_comment": "验收模拟：已核对更正后的联系单v2，接收资料用于演示。",
+        "events": [
+          {
+            "event_id": "evt_5b2dcea3d5cf40c79ed494b1",
+            "event_type": "customer.handoff.submitted",
+            "source_agent": "investment_agent",
+            "target_agent": "service_agent",
+            "payload": {
+              "document": {
+                "contract_no": "DEMO-HT-20261101-150248-investment-acceptance",
+                "contract_version": "v1",
+                "contact_sheet_ref": "DEMO-LXD-20261101-150248-investment-acceptance",
+                "contact_sheet_version": "v1",
+                "location": "模拟园区A栋501",
+                "contact_name": "陈女士",
+                "contact_phone": "验收模拟联系方式（不拨打）",
+                "service_requirements": "模拟需求：入驻后协助办理门禁",
+                "agreements": "仅用于验收，不代表真实合同或租赁承诺"
+              },
+              "contract_signed_confirmed": true,
+              "cancelled_follow_ups": 1,
+              "handoff_id": 2,
+              "customer_id": 2,
+              "actor": "MVP验收-招商模拟员",
+              "revision": 4,
+              "operation": "submit",
+              "request_digest": "90c282e339cc9bd678e7425810d9582f14f7841b544556283190a249a199a4a9"
+            },
+            "occurred_at": "2026-11-01T15:05:34.878390"
+          },
+          {
+            "event_id": "evt_d0c08238d90d4d448f65bcb3",
+            "event_type": "customer.handoff.returned",
+            "source_agent": "service_agent",
+            "target_agent": "investment_agent",
+            "payload": {
+              "accepted": false,
+              "comment": "验收模拟：入驻房间需由501更正为502，请更新联系单版本。",
+              "document": {
+                "contract_no": "DEMO-HT-20261101-150248-investment-acceptance",
+                "contract_version": "v1",
+                "contact_sheet_ref": "DEMO-LXD-20261101-150248-investment-acceptance",
+                "contact_sheet_version": "v1",
+                "location": "模拟园区A栋501",
+                "contact_name": "陈女士",
+                "contact_phone": "验收模拟联系方式（不拨打）",
+                "service_requirements": "模拟需求：入驻后协助办理门禁",
+                "agreements": "仅用于验收，不代表真实合同或租赁承诺"
+              },
+              "handoff_id": 2,
+              "customer_id": 2,
+              "actor": "MVP验收-企服模拟员",
+              "revision": 5,
+              "operation": "decide",
+              "request_digest": "e0f494574d2839eb3d889732363acb0640d150e44ab48aa00a478da99b29fef6"
+            },
+            "occurred_at": "2026-11-01T15:05:35.124551"
+          },
+          {
+            "event_id": "evt_50b1843cfb6444f99182376f",
+            "event_type": "customer.handoff.submitted",
+            "source_agent": "investment_agent",
+            "target_agent": "service_agent",
+            "payload": {
+              "document": {
+                "contract_no": "DEMO-HT-20261101-150248-investment-acceptance",
+                "contract_version": "v1",
+                "contact_sheet_ref": "DEMO-LXD-20261101-150248-investment-acceptance",
+                "contact_sheet_version": "v2",
+                "location": "模拟园区A栋502",
+                "contact_name": "陈女士",
+                "contact_phone": "验收模拟联系方式（不拨打）",
+                "service_requirements": "模拟需求：入驻后协助办理门禁",
+                "agreements": "仅用于验收，不代表真实合同或租赁承诺"
+              },
+              "contract_signed_confirmed": true,
+              "cancelled_follow_ups": 0,
+              "handoff_id": 2,
+              "customer_id": 2,
+              "actor": "MVP验收-招商模拟员",
+              "revision": 7,
+              "operation": "submit",
+              "request_digest": "73063b49a828593b08d5c75d3b32475da1809d0dbcd9c419874a08cc888d3f85"
+            },
+            "occurred_at": "2026-11-01T15:05:35.262653"
+          },
+          {
+            "event_id": "evt_d17bb5769b75433b99ef2014",
+            "event_type": "customer.handoff.accepted",
+            "source_agent": "service_agent",
+            "target_agent": "supervisor",
+            "payload": {
+              "accepted": true,
+              "comment": "验收模拟：已核对更正后的联系单v2，接收资料用于演示。",
+              "document": {
+                "contract_no": "DEMO-HT-20261101-150248-investment-acceptance",
+                "contract_version": "v1",
+                "contact_sheet_ref": "DEMO-LXD-20261101-150248-investment-acceptance",
+                "contact_sheet_version": "v2",
+                "location": "模拟园区A栋502",
+                "contact_name": "陈女士",
+                "contact_phone": "验收模拟联系方式（不拨打）",
+                "service_requirements": "模拟需求：入驻后协助办理门禁",
+                "agreements": "仅用于验收，不代表真实合同或租赁承诺"
+              },
+              "handoff_id": 2,
+              "customer_id": 2,
+              "actor": "MVP验收-企服模拟员",
+              "revision": 8,
+              "operation": "decide",
+              "request_digest": "703a6ed395e7d088acbe5c41dedccf40b57af247062f7f18e728a4a0dcf9460c"
+            },
+            "occurred_at": "2026-11-01T15:05:35.292759"
+          }
+        ]
+      }
+    },
+    {
+      "name": "acceptance_retry_does_not_duplicate_event",
+      "method": "POST",
+      "path": "/api/v1/customer-handoffs/2/decide",
+      "http_status": 200,
+      "expected_status": 200,
+      "request": {
+        "expected_revision": 7,
+        "actor": "MVP验收-企服模拟员",
+        "accepted": true,
+        "comment": "验收模拟：已核对更正后的联系单v2，接收资料用于演示。",
+        "idempotency_key": "20261101-150248-investment-acceptance:accept"
+      },
+      "response": {
+        "id": 2,
+        "customer_id": 2,
+        "customer_name": "验收星桥科技",
+        "workflow_id": "wf_7d209235fec447bfbd3f6836",
+        "status": "accepted",
+        "revision": 8,
+        "document": {
+          "contract_no": "DEMO-HT-20261101-150248-investment-acceptance",
+          "contract_version": "v1",
+          "contact_sheet_ref": "DEMO-LXD-20261101-150248-investment-acceptance",
+          "contact_sheet_version": "v2",
+          "location": "模拟园区A栋502",
+          "contact_name": "陈女士",
+          "contact_phone": "验收模拟联系方式（不拨打）",
+          "service_requirements": "模拟需求：入驻后协助办理门禁",
+          "agreements": "仅用于验收，不代表真实合同或租赁承诺"
+        },
+        "check": {
+          "mode": "rule_fallback_demo",
+          "template_status": "demo_fields_pending_official_template",
+          "missing_fields": [],
+          "missing_labels": [],
+          "next_action": "human_confirm"
+        },
+        "submitted_by": "MVP验收-招商模拟员",
+        "submitted_at": "2026-11-01T15:05:35.260446",
+        "decided_by": "MVP验收-企服模拟员",
+        "decided_at": "2026-11-01T15:05:35.290920",
+        "decision_comment": "验收模拟：已核对更正后的联系单v2，接收资料用于演示。",
+        "events": [
+          {
+            "event_id": "evt_5b2dcea3d5cf40c79ed494b1",
+            "event_type": "customer.handoff.submitted",
+            "source_agent": "investment_agent",
+            "target_agent": "service_agent",
+            "payload": {
+              "document": {
+                "contract_no": "DEMO-HT-20261101-150248-investment-acceptance",
+                "contract_version": "v1",
+                "contact_sheet_ref": "DEMO-LXD-20261101-150248-investment-acceptance",
+                "contact_sheet_version": "v1",
+                "location": "模拟园区A栋501",
+                "contact_name": "陈女士",
+                "contact_phone": "验收模拟联系方式（不拨打）",
+                "service_requirements": "模拟需求：入驻后协助办理门禁",
+                "agreements": "仅用于验收，不代表真实合同或租赁承诺"
+              },
+              "contract_signed_confirmed": true,
+              "cancelled_follow_ups": 1,
+              "handoff_id": 2,
+              "customer_id": 2,
+              "actor": "MVP验收-招商模拟员",
+              "revision": 4,
+              "operation": "submit",
+              "request_digest": "90c282e339cc9bd678e7425810d9582f14f7841b544556283190a249a199a4a9"
+            },
+            "occurred_at": "2026-11-01T15:05:34.878390"
+          },
+          {
+            "event_id": "evt_d0c08238d90d4d448f65bcb3",
+            "event_type": "customer.handoff.returned",
+            "source_agent": "service_agent",
+            "target_agent": "investment_agent",
+            "payload": {
+              "accepted": false,
+              "comment": "验收模拟：入驻房间需由501更正为502，请更新联系单版本。",
+              "document": {
+                "contract_no": "DEMO-HT-20261101-150248-investment-acceptance",
+                "contract_version": "v1",
+                "contact_sheet_ref": "DEMO-LXD-20261101-150248-investment-acceptance",
+                "contact_sheet_version": "v1",
+                "location": "模拟园区A栋501",
+                "contact_name": "陈女士",
+                "contact_phone": "验收模拟联系方式（不拨打）",
+                "service_requirements": "模拟需求：入驻后协助办理门禁",
+                "agreements": "仅用于验收，不代表真实合同或租赁承诺"
+              },
+              "handoff_id": 2,
+              "customer_id": 2,
+              "actor": "MVP验收-企服模拟员",
+              "revision": 5,
+              "operation": "decide",
+              "request_digest": "e0f494574d2839eb3d889732363acb0640d150e44ab48aa00a478da99b29fef6"
+            },
+            "occurred_at": "2026-11-01T15:05:35.124551"
+          },
+          {
+            "event_id": "evt_50b1843cfb6444f99182376f",
+            "event_type": "customer.handoff.submitted",
+            "source_agent": "investment_agent",
+            "target_agent": "service_agent",
+            "payload": {
+              "document": {
+                "contract_no": "DEMO-HT-20261101-150248-investment-acceptance",
+                "contract_version": "v1",
+                "contact_sheet_ref": "DEMO-LXD-20261101-150248-investment-acceptance",
+                "contact_sheet_version": "v2",
+                "location": "模拟园区A栋502",
+                "contact_name": "陈女士",
+                "contact_phone": "验收模拟联系方式（不拨打）",
+                "service_requirements": "模拟需求：入驻后协助办理门禁",
+                "agreements": "仅用于验收，不代表真实合同或租赁承诺"
+              },
+              "contract_signed_confirmed": true,
+              "cancelled_follow_ups": 0,
+              "handoff_id": 2,
+              "customer_id": 2,
+              "actor": "MVP验收-招商模拟员",
+              "revision": 7,
+              "operation": "submit",
+              "request_digest": "73063b49a828593b08d5c75d3b32475da1809d0dbcd9c419874a08cc888d3f85"
+            },
+            "occurred_at": "2026-11-01T15:05:35.262653"
+          },
+          {
+            "event_id": "evt_d17bb5769b75433b99ef2014",
+            "event_type": "customer.handoff.accepted",
+            "source_agent": "service_agent",
+            "target_agent": "supervisor",
+            "payload": {
+              "accepted": true,
+              "comment": "验收模拟：已核对更正后的联系单v2，接收资料用于演示。",
+              "document": {
+                "contract_no": "DEMO-HT-20261101-150248-investment-acceptance",
+                "contract_version": "v1",
+                "contact_sheet_ref": "DEMO-LXD-20261101-150248-investment-acceptance",
+                "contact_sheet_version": "v2",
+                "location": "模拟园区A栋502",
+                "contact_name": "陈女士",
+                "contact_phone": "验收模拟联系方式（不拨打）",
+                "service_requirements": "模拟需求：入驻后协助办理门禁",
+                "agreements": "仅用于验收，不代表真实合同或租赁承诺"
+              },
+              "handoff_id": 2,
+              "customer_id": 2,
+              "actor": "MVP验收-企服模拟员",
+              "revision": 8,
+              "operation": "decide",
+              "request_digest": "703a6ed395e7d088acbe5c41dedccf40b57af247062f7f18e728a4a0dcf9460c"
+            },
+            "occurred_at": "2026-11-01T15:05:35.292759"
+          }
+        ]
+      }
+    },
+    {
+      "name": "accepted_handoff_cannot_be_edited",
+      "method": "PUT",
+      "path": "/api/v1/customer-handoffs/2",
+      "http_status": 409,
+      "expected_status": 409,
+      "request": {
+        "expected_revision": 8,
+        "document": {
+          "contract_no": "DEMO-HT-20261101-150248-investment-acceptance",
+          "contract_version": "v1",
+          "contact_sheet_ref": "DEMO-LXD-20261101-150248-investment-acceptance",
+          "contact_sheet_version": "v2",
+          "location": "模拟园区A栋502",
+          "contact_name": "陈女士",
+          "contact_phone": "验收模拟联系方式（不拨打）",
+          "service_requirements": "模拟需求：入驻后协助办理门禁",
+          "agreements": "仅用于验收，不代表真实合同或租赁承诺"
+        }
+      },
+      "response": {
+        "detail": "交接状态或版本已变化，请刷新后重试"
+      }
+    },
+    {
+      "name": "accepted_handoff_cannot_be_reversed_by_new_decision",
+      "method": "POST",
+      "path": "/api/v1/customer-handoffs/2/decide",
+      "http_status": 409,
+      "expected_status": 409,
+      "request": {
+        "expected_revision": 8,
+        "actor": "MVP验收-企服模拟员",
+        "accepted": false,
+        "comment": "验收模拟：已核对更正后的联系单v2，接收资料用于演示。",
+        "idempotency_key": "20261101-150248-investment-acceptance:reverse-accepted"
+      },
+      "response": {
+        "detail": "交接状态或版本已变化，请刷新后重试"
+      }
+    },
+    {
+      "name": "final_workflow_completed_with_cross_department_events",
+      "method": "GET",
+      "path": "/api/v1/agent/runs/wf_7d209235fec447bfbd3f6836",
+      "http_status": 200,
+      "expected_status": 200,
+      "request": null,
+      "response": {
+        "workflow_id": "wf_7d209235fec447bfbd3f6836",
+        "channel": "internal",
+        "requester_id": null,
+        "status": "completed",
+        "current_step": "customer_handoff_received",
+        "original_message": "验收星桥科技签约客户交接",
+        "draft": {
+          "contract_no": "DEMO-HT-20261101-150248-investment-acceptance",
+          "contract_version": "v1",
+          "contact_sheet_ref": "DEMO-LXD-20261101-150248-investment-acceptance",
+          "contact_sheet_version": "v2",
+          "location": "模拟园区A栋502",
+          "contact_name": "陈女士",
+          "contact_phone": "验收模拟联系方式（不拨打）",
+          "service_requirements": "模拟需求：入驻后协助办理门禁",
+          "agreements": "仅用于验收，不代表真实合同或租赁承诺"
+        },
+        "missing_fields": [],
+        "ticket_id": null,
+        "ticket": null,
+        "attachments": [],
+        "events": [
+          {
+            "event_id": "evt_5b2dcea3d5cf40c79ed494b1",
+            "workflow_id": "wf_7d209235fec447bfbd3f6836",
+            "event_type": "customer.handoff.submitted",
+            "source_agent": "investment_agent",
+            "target_agent": "service_agent",
+            "business_id": "2",
+            "ticket_id": null,
+            "payload": {
+              "document": {
+                "contract_no": "DEMO-HT-20261101-150248-investment-acceptance",
+                "contract_version": "v1",
+                "contact_sheet_ref": "DEMO-LXD-20261101-150248-investment-acceptance",
+                "contact_sheet_version": "v1",
+                "location": "模拟园区A栋501",
+                "contact_name": "陈女士",
+                "contact_phone": "验收模拟联系方式（不拨打）",
+                "service_requirements": "模拟需求：入驻后协助办理门禁",
+                "agreements": "仅用于验收，不代表真实合同或租赁承诺"
+              },
+              "contract_signed_confirmed": true,
+              "cancelled_follow_ups": 1,
+              "handoff_id": 2,
+              "customer_id": 2,
+              "actor": "MVP验收-招商模拟员",
+              "revision": 4,
+              "operation": "submit",
+              "request_digest": "90c282e339cc9bd678e7425810d9582f14f7841b544556283190a249a199a4a9"
+            },
+            "workflow_status": "waiting_human",
+            "requires_human": true,
+            "idempotency_key": "handoff:7064aa11a3cd6e27b1eb168a28ccb0ec20a727ef1fc00f09ac3dee92eaeff226",
+            "status": "completed",
+            "error": null,
+            "occurred_at": "2026-11-01T15:05:34.878390"
+          },
+          {
+            "event_id": "evt_d0c08238d90d4d448f65bcb3",
+            "workflow_id": "wf_7d209235fec447bfbd3f6836",
+            "event_type": "customer.handoff.returned",
+            "source_agent": "service_agent",
+            "target_agent": "investment_agent",
+            "business_id": "2",
+            "ticket_id": null,
+            "payload": {
+              "accepted": false,
+              "comment": "验收模拟：入驻房间需由501更正为502，请更新联系单版本。",
+              "document": {
+                "contract_no": "DEMO-HT-20261101-150248-investment-acceptance",
+                "contract_version": "v1",
+                "contact_sheet_ref": "DEMO-LXD-20261101-150248-investment-acceptance",
+                "contact_sheet_version": "v1",
+                "location": "模拟园区A栋501",
+                "contact_name": "陈女士",
+                "contact_phone": "验收模拟联系方式（不拨打）",
+                "service_requirements": "模拟需求：入驻后协助办理门禁",
+                "agreements": "仅用于验收，不代表真实合同或租赁承诺"
+              },
+              "handoff_id": 2,
+              "customer_id": 2,
+              "actor": "MVP验收-企服模拟员",
+              "revision": 5,
+              "operation": "decide",
+              "request_digest": "e0f494574d2839eb3d889732363acb0640d150e44ab48aa00a478da99b29fef6"
+            },
+            "workflow_status": "waiting_input",
+            "requires_human": false,
+            "idempotency_key": "handoff:3186c4fd16ee2e4e1a3e3becc16466453a23bcf8726ef2d6790ccef7850d0452",
+            "status": "completed",
+            "error": null,
+            "occurred_at": "2026-11-01T15:05:35.124551"
+          },
+          {
+            "event_id": "evt_50b1843cfb6444f99182376f",
+            "workflow_id": "wf_7d209235fec447bfbd3f6836",
+            "event_type": "customer.handoff.submitted",
+            "source_agent": "investment_agent",
+            "target_agent": "service_agent",
+            "business_id": "2",
+            "ticket_id": null,
+            "payload": {
+              "document": {
+                "contract_no": "DEMO-HT-20261101-150248-investment-acceptance",
+                "contract_version": "v1",
+                "contact_sheet_ref": "DEMO-LXD-20261101-150248-investment-acceptance",
+                "contact_sheet_version": "v2",
+                "location": "模拟园区A栋502",
+                "contact_name": "陈女士",
+                "contact_phone": "验收模拟联系方式（不拨打）",
+                "service_requirements": "模拟需求：入驻后协助办理门禁",
+                "agreements": "仅用于验收，不代表真实合同或租赁承诺"
+              },
+              "contract_signed_confirmed": true,
+              "cancelled_follow_ups": 0,
+              "handoff_id": 2,
+              "customer_id": 2,
+              "actor": "MVP验收-招商模拟员",
+              "revision": 7,
+              "operation": "submit",
+              "request_digest": "73063b49a828593b08d5c75d3b32475da1809d0dbcd9c419874a08cc888d3f85"
+            },
+            "workflow_status": "waiting_human",
+            "requires_human": true,
+            "idempotency_key": "handoff:9e2dce398290ab21b91fc6224cc8a5b1d7c26dd6c1ab7755f39a1d11dbf1b006",
+            "status": "completed",
+            "error": null,
+            "occurred_at": "2026-11-01T15:05:35.262653"
+          },
+          {
+            "event_id": "evt_d17bb5769b75433b99ef2014",
+            "workflow_id": "wf_7d209235fec447bfbd3f6836",
+            "event_type": "customer.handoff.accepted",
+            "source_agent": "service_agent",
+            "target_agent": "supervisor",
+            "business_id": "2",
+            "ticket_id": null,
+            "payload": {
+              "accepted": true,
+              "comment": "验收模拟：已核对更正后的联系单v2，接收资料用于演示。",
+              "document": {
+                "contract_no": "DEMO-HT-20261101-150248-investment-acceptance",
+                "contract_version": "v1",
+                "contact_sheet_ref": "DEMO-LXD-20261101-150248-investment-acceptance",
+                "contact_sheet_version": "v2",
+                "location": "模拟园区A栋502",
+                "contact_name": "陈女士",
+                "contact_phone": "验收模拟联系方式（不拨打）",
+                "service_requirements": "模拟需求：入驻后协助办理门禁",
+                "agreements": "仅用于验收，不代表真实合同或租赁承诺"
+              },
+              "handoff_id": 2,
+              "customer_id": 2,
+              "actor": "MVP验收-企服模拟员",
+              "revision": 8,
+              "operation": "decide",
+              "request_digest": "703a6ed395e7d088acbe5c41dedccf40b57af247062f7f18e728a4a0dcf9460c"
+            },
+            "workflow_status": "completed",
+            "requires_human": false,
+            "idempotency_key": "handoff:1c9da39c8948fb3aac4dae1393990ab30e2b0d748c43acec17a4e24dc0965d7a",
+            "status": "completed",
+            "error": null,
+            "occurred_at": "2026-11-01T15:05:35.292759"
+          }
+        ]
+      }
+    }
+  ],
+  "browser_verified": false,
+  "confirmation_provenance": "user_authorized_api_simulation_not_manual_ui",
+  "created_ids": {
+    "customer_id": 2,
+    "follow_up_task_id": 2,
+    "next_follow_up_task_id": 3,
+    "handoff_id": 2,
+    "handoff_workflow_id": "wf_7d209235fec447bfbd3f6836"
+  },
+  "finished_at": "2026-11-01T15:05:35.605214",
+  "existing_data_preserved": true,
+  "final_customer_stage": "signed",
+  "final_handoff_status": "accepted",
+  "handoff_event_count": 4,
+  "semantic_review": "Extracted names match original, absent phone/name remain null; draft suggests follow-up without claiming signing or service receipt.",
+  "limitations": [
+    "Browser clicks not verified",
+    "Official contact sheet and identity authorization not integrated",
+    "Handoff validation uses deterministic rules",
+    "Signing and role confirmations were authorized simulations; no real contract or customer contact"
+  ],
+  "regression": {
+    "initial_run": {
+      "passed": 153,
+      "setup_errors": 3,
+      "cause": "Existing system pytest temporary directory was not accessible"
+    },
+    "failed_setup_rerun": {
+      "file": "tests/test_config.py",
+      "passed": 3,
+      "setup_errors": 0,
+      "resolution": "Used a new unique pytest basetemp under backend/.local; no existing directory was removed"
+    },
+    "total_unique_tests_passed": 156,
+    "models_forced_offline": true
+  },
+  "summary_updated_at": "2026-11-01T15:08:30.897987"
+}
