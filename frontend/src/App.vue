@@ -6,6 +6,8 @@ import { useWorkspaceNavigation, workspaces } from './composables/useWorkspaceNa
 import AiModeNotice from './components/AiModeNotice.vue'
 import AgentTrace from './components/AgentTrace.vue'
 import ImageUpload from './components/ImageUpload.vue'
+import AcceptanceHistory from './components/AcceptanceHistory.vue'
+import AcceptanceForm from './components/AcceptanceForm.vue'
 import {
   AlertCircle,
   ArrowDownUp,
@@ -37,6 +39,7 @@ import {
   getTicketEvents,
   getTicketImages,
   getTicketRepairs,
+  getTicketAcceptances,
   getTickets,
   startProcessing,
   submitAcceptance,
@@ -53,6 +56,7 @@ import {
   type TicketEvent,
   type ImageAttachment,
   type RepairFeedback,
+  type AcceptanceRecord,
 } from './api'
 
 const { activeWorkspace, visitedWorkspaces, navigate } = useWorkspaceNavigation()
@@ -88,6 +92,8 @@ const repairImages = ref<ImageAttachment[]>([])
 const repairUploading = ref(false)
 const ticketImages = ref<ImageAttachment[]>([])
 const repairFeedback = ref<RepairFeedback[]>([])
+const acceptanceHistory = ref<AcceptanceRecord[]>([])
+const acceptanceHistoryError = ref('')
 const capabilities = ref<AgentCapability[]>([])
 const aiRuntime = ref<AiRuntime | null>(null)
 const outdatedBackend = computed(() => aiRuntime.value !== null && !aiRuntime.value.api_features?.includes('image_attachments'))
@@ -99,8 +105,6 @@ const aiResult = ref<RepairParseResult | null>(null)
 const assignPersonnelNo = ref('')
 const repairDescription = ref('')
 const repairPhotoUrls = ref('')
-const acceptanceComment = ref('维修完成，现场确认正常')
-const acceptedBy = ref('企服演示员')
 const createForm = ref({
   location: '',
   issue_type: '',
@@ -408,45 +412,37 @@ function submitRepairResult() {
   })
 }
 
-function submitAcceptanceResult() {
-  if (selectedId.value === null || !acceptanceComment.value.trim()) {
-    actionError.value = '请填写验收意见'
-    return
-  }
-  void runAction(() => submitAcceptance(selectedId.value as number, {
-    acceptance_comment: acceptanceComment.value,
-    accepted_by: acceptedBy.value || '企服演示员',
-    accepted: true,
-  }))
-}
-
-function rejectAcceptanceResult() {
-  if (selectedId.value === null || !acceptanceComment.value.trim()) {
-    actionError.value = '请填写退回原因'
-    return
-  }
-  void runAction(() => submitAcceptance(selectedId.value as number, {
-    acceptance_comment: acceptanceComment.value,
-    accepted_by: acceptedBy.value || '企服演示员',
-    accepted: false,
-  }))
+function submitAcceptanceDecision(payload: { accepted: boolean; acceptance_comment: string; accepted_by: string }) {
+  if (actionLoading.value || selectedId.value === null) return
+  const ticketId = selectedId.value
+  void runAction(() => submitAcceptance(ticketId, payload))
 }
 
 async function loadEvents(ticketId: number, silent = false) {
   const version = ++eventRequestVersion
   if (!silent) { loadingEvents.value = true; error.value = '' }
   try {
-    const [nextEvents, nextImages, nextRepairs] = await Promise.all([getTicketEvents(ticketId), getTicketImages(ticketId), getTicketRepairs(ticketId)])
+    // 历史接口不可用时单独提示，避免旧后端导致整个工单详情无法展示。
+    const [nextEvents, nextImages, nextRepairs, nextAcceptances] = await Promise.all([
+      getTicketEvents(ticketId), getTicketImages(ticketId), getTicketRepairs(ticketId),
+      getTicketAcceptances(ticketId)
+        .then(records => ({ records, error: '' }))
+        .catch(cause => ({ records: [] as AcceptanceRecord[], error: getErrorMessage(cause, '验收记录加载失败') })),
+    ])
     if (selectedId.value !== ticketId || version !== eventRequestVersion) return false
     events.value = nextEvents
     ticketImages.value = nextImages
     repairFeedback.value = nextRepairs
+    acceptanceHistory.value = nextAcceptances.records
+    acceptanceHistoryError.value = nextAcceptances.error
     return true
   } catch (cause) {
     if (selectedId.value !== ticketId || version !== eventRequestVersion) return false
     if (silent) syncError.value = '工单详情同步失败，请点击刷新重试'
     else {
       events.value = []
+      acceptanceHistory.value = []
+      acceptanceHistoryError.value = '工单详情加载失败，无法读取验收记录'
       error.value = cause instanceof Error ? cause.message : '事件时间线加载失败'
     }
     return false
@@ -488,6 +484,8 @@ watch(selectedId, (id) => {
   repairDescription.value = ''
   ticketImages.value = []
   repairFeedback.value = []
+  acceptanceHistory.value = []
+  acceptanceHistoryError.value = ''
   dispatchSuggestion.value = null
   if (id !== null) {
     const ticket = tickets.value.find((item) => item.id === id)
@@ -546,13 +544,16 @@ onBeforeUnmount(() => {
       <div class="sidebar-footer">
         <span class="status-dot"></span>
         <span>服务运行中</span>
-        <span class="api-address">{{ aiRuntime?.environment?.name === 'isolated_demo' ? '隔离演示' : '业务后端' }}</span>
+        <span class="api-address">{{ aiRuntime?.environment?.name === 'isolated_demo' ? '隔离演示' : aiRuntime?.environment?.name === 'portfolio_demo' ? '求职演示' : '业务后端' }}</span>
       </div>
     </aside>
 
     <main class="main-area">
       <div v-if="aiRuntime?.environment?.name === 'isolated_demo'" class="demo-environment" role="status">
         隔离演示 · 仅使用模拟数据，重启后清空。请勿录入真实客户或人员资料。
+      </div>
+      <div v-else-if="aiRuntime?.environment?.name === 'portfolio_demo'" class="demo-environment" role="status">
+        求职演示 · 仅使用模拟数据，访问者共享演示记录，数据会保留。请勿录入真实客户或人员资料。
       </div>
       <header class="topbar">
         <div class="breadcrumbs"><span>运营协同</span><span class="crumb-divider">/</span><strong>{{ currentWorkspace.title }}</strong></div>
@@ -613,7 +614,7 @@ onBeforeUnmount(() => {
             <div v-if="aiResult" class="ai-result">
               <span>位置：{{ aiResult.location || '未识别' }}</span>
               <span>类型：{{ aiResult.issue_type || '未识别' }}</span>
-              <span>建议等级：{{ aiResult.suggested_priority ? priorityLabels[aiResult.suggested_priority] : '未识别' }}</span>
+              <span>建议优先级：{{ aiResult.suggested_priority ? priorityLabels[aiResult.suggested_priority] : '未识别' }}</span>
               <span v-if="aiResult.missing_fields.length">待补充：{{ aiResult.missing_fields.join('、') }}</span>
             </div>
           </div>
@@ -621,15 +622,16 @@ onBeforeUnmount(() => {
           <div class="form-grid">
             <label><span>报修位置</span><input v-model="createForm.location" required placeholder="例如：A栋三楼卫生间" /></label>
             <label><span>故障类型</span><input v-model="createForm.issue_type" required placeholder="例如：漏水、照明故障" /></label>
-            <label><span>优先级</span><select v-model="createForm.priority"><option value="normal">普通</option><option value="urgent">加急</option><option value="critical">特急</option></select></label>
+            <label><span>确认优先级</span><select v-model="createForm.priority"><option value="normal">普通</option><option value="urgent">加急</option><option value="critical">特急</option></select></label>
             <label class="form-wide"><span>问题描述</span><textarea v-model="createForm.description" required rows="2" placeholder="描述故障现象和影响范围"></textarea></label>
           </div>
           <ImageUpload v-model="createImages" :disabled="actionLoading" @busy-change="createUploading = $event" />
-          <div class="form-actions"><button class="secondary-button" type="button" :disabled="createUploading || actionLoading" @click="closeCreateForm">取消</button><button class="primary-button" type="submit" :disabled="actionLoading || createUploading"><Send :size="15" />{{ actionLoading ? '提交中…' : '创建工单' }}</button></div>
+          <p class="muted">请核对建议和工单字段，创建后按确认优先级保存。</p>
+          <div class="form-actions"><button class="secondary-button" type="button" :disabled="createUploading || actionLoading" @click="closeCreateForm">取消</button><button class="primary-button" type="submit" :disabled="actionLoading || createUploading"><Send :size="15" />{{ actionLoading ? '提交中…' : '确认并创建工单' }}</button></div>
         </form>
       </div>
 
-      <div v-if="actionError && activeWorkspace === 'repairs'" class="notice error-notice" role="alert">
+      <div v-if="actionError && activeWorkspace === 'repairs' && (selectedTicket?.status !== 'pending_review' || showCreateForm)" class="notice error-notice" role="alert">
         <AlertCircle :size="17" />
         <span>{{ actionError }}</span>
       </div>
@@ -647,7 +649,7 @@ onBeforeUnmount(() => {
 
           <AiModeNotice :result="workflowResult?.draft" :runtime="aiRuntime" />
           <AgentTrace :trace="workflowResult?.draft.orchestration" />
-          <p class="muted">AI 只检查信息完整性；关键动作由人确认。当前为 Web 入口，飞书待接入。</p>
+          <p class="muted">AI 辅助整理报修信息；关键动作由人确认。Web 与飞书共用业务后端，建单按人工确认优先级保存。</p>
           <p v-if="workflowResult?.draft.follow_up_question" class="coordination-summary">企服追问：{{ workflowResult.draft.follow_up_question }}</p>
           <label class="coordinator-input">
             <span>{{ workflowResult?.status === 'waiting_input' ? '补充缺失信息' : '报修内容' }}</span>
@@ -677,7 +679,7 @@ onBeforeUnmount(() => {
             </div>
             <details v-if="workflowResult.draft.evidence && Object.keys(workflowResult.draft.evidence).length"><summary>查看提取依据</summary><p v-for="(quote, field) in workflowResult.draft.evidence" :key="field">{{ field === 'location' ? '位置' : '故障' }}：{{ quote }}</p></details>
             <div v-if="workflowResult.status === 'waiting_human'" class="workflow-confirm">
-              <label><span>授权人员确定优先级</span><select v-model="workflowPriority"><option value="" disabled>请选择</option><option value="normal">普通</option><option value="urgent">加急</option><option value="critical">特急</option></select></label>
+              <label><span>确认优先级</span><select v-model="workflowPriority"><option value="" disabled>请选择</option><option value="normal">普通</option><option value="urgent">加急</option><option value="critical">特急</option></select></label>
               <button class="primary-button" type="button" :disabled="coordinatorLoading" @click="confirmWorkflowTicket"><CheckCircle2 :size="15" />确认并创建工单</button>
             </div>
             <div v-if="workflowResult.ticket" class="created-work-items"><div><span>维修工单</span><strong>{{ workflowResult.ticket.ticket_no }}</strong><small>待工程部接单</small></div></div>
@@ -835,25 +837,8 @@ onBeforeUnmount(() => {
               </button>
             </div>
 
-            <div v-else-if="selectedTicket.status === 'pending_review'" class="workflow-form">
-              <div class="action-context"><CheckCircle2 :size="16" /><span>工程部已提交维修结果，请企服确认</span></div>
-              <label>
-                <span>验收意见</span>
-                <textarea v-model="acceptanceComment" rows="2"></textarea>
-              </label>
-              <label>
-                <span>验收人员</span>
-                <input v-model="acceptedBy" placeholder="企服演示员" />
-              </label>
-              <button class="primary-button" type="button" :disabled="actionLoading" @click="submitAcceptanceResult">
-                <CheckCircle2 :size="15" />
-                验收并关闭工单
-              </button>
-              <button class="secondary-button" type="button" :disabled="actionLoading" @click="rejectAcceptanceResult">
-                <RefreshCw :size="15" />
-                退回工程部返工
-              </button>
-            </div>
+            <AcceptanceForm v-else-if="selectedTicket.status === 'pending_review'" :key="selectedTicket.id"
+              :loading="actionLoading" :error="actionError" @decision="submitAcceptanceDecision" />
 
             <div v-else class="action-context completed-context">
               <CheckCircle2 :size="16" />
@@ -872,6 +857,7 @@ onBeforeUnmount(() => {
           </section>
           <ImageUpload v-if="ticketImages.some(image => image.purpose === 'intake')"
             :model-value="ticketImages.filter(image => image.purpose === 'intake')" readonly title="报修现场图片" />
+          <AcceptanceHistory :records="acceptanceHistory" :loading="loadingEvents" :error="acceptanceHistoryError" />
           <div class="timeline-section">
             <div class="timeline-heading">
               <div>
@@ -888,7 +874,7 @@ onBeforeUnmount(() => {
                 <span class="timeline-marker" :class="{ last: index === events.length - 1 }"></span>
                 <div class="timeline-content">
                   <div class="timeline-line-one">
-                    <strong>{{ eventLabels[event.to_status] ?? statusLabels[event.to_status] ?? event.to_status }}</strong>
+                    <strong>{{ event.from_status === 'pending_review' && event.to_status === 'processing' ? '验收退回，继续维修' : eventLabels[event.to_status] ?? statusLabels[event.to_status] ?? event.to_status }}</strong>
                     <span v-if="event.is_inferred" class="inferred-label">历史推断</span>
                   </div>
                   <p v-if="event.reason" class="timeline-reason">{{ event.reason }}</p>

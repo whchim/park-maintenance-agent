@@ -41,3 +41,7 @@ backend/var/uploads/
 backend/.uv-attachment-cache/
 # 演示升级的本机快照，不作为项目资料发布。
 backend/.local/
+
+# 部署访问凭据与本机验证工具不随源码发布。
+deploy/secrets/
+backups/

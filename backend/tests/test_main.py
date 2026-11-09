@@ -11,6 +11,7 @@ from sqlalchemy.pool import StaticPool
 from app.main import app
 from app.database import Base, get_db
 from app.models.repair_personnel import RepairPersonnel
+from app.models.acceptance import AcceptanceRecord
 
 # 创建独立的内存 SQLite 数据库
 test_engine = create_engine(
@@ -1132,7 +1133,7 @@ def test_update_status_for_nonexistent_ticket():
     assert response.status_code == 404
     assert response.json()["detail"] == "工单不存在"
 
-def test_create_ticket_auto_upgrade_priority():
+def test_create_ticket_preserves_confirmed_priority_over_keyword_suggestion():
     # 用户选择普通，但描述包含特急关键词
     payload = {
         "location": "A栋",
@@ -1148,8 +1149,8 @@ def test_create_ticket_auto_upgrade_priority():
 
     assert response.status_code == 201
 
-    # 系统应该自动提升为特急
-    assert response.json()["priority"] == "critical"
+    # 关键词只能给出建议，建单保留人工确认的普通等级。
+    assert response.json()["priority"] == "normal"
 
 
 def test_create_ticket_keep_higher_manual_priority():
@@ -1169,7 +1170,49 @@ def test_create_ticket_keep_higher_manual_priority():
     assert response.status_code == 201
 
     # 系统不能把用户手动提高的优先级降下来
-    assert response.json()["priority"] == "critical"    
+    assert response.json()["priority"] == "critical"
+
+
+@pytest.mark.parametrize("priority", ["normal", "urgent", "critical"])
+@pytest.mark.parametrize("description", ["电梯困人，请立即处理", "走廊灯不亮"])
+def test_manual_web_and_feishu_creation_share_confirmed_business_fields(priority, description):
+    """高低关键词建议均不覆盖确认等级，各入口保留各自来源事件。"""
+    payload = {
+        "location": "A栋三楼",
+        "issue_type": "设备故障",
+        "description": description,
+        "priority": priority,
+    }
+    manual = client.post("/api/v1/tickets", json=payload)
+    assert manual.status_code == 201
+    tickets = [manual.json()]
+    for channel in ("web", "feishu"):
+        start = client.post("/api/v1/agent/runs", json={
+            "message": "A栋三楼卫生间漏水",
+            "channel": channel,
+            "idempotency_key": f"unified-start-{channel}",
+        })
+        assert start.status_code == 200
+        assert start.json()["channel"] == channel
+        assert start.json()["status"] == "waiting_human"
+        workflow_id = start.json()["workflow_id"]
+        confirmed = client.post(f"/api/v1/agent/runs/{workflow_id}/confirm-ticket", json={
+            **payload, "idempotency_key": f"unified-confirm-{channel}",
+        })
+        assert confirmed.status_code == 200
+        tickets.append(confirmed.json()["ticket"])
+
+    assert len({ticket["ticket_no"] for ticket in tickets}) == 3
+    for index, ticket in enumerate(tickets):
+        for field, value in payload.items():
+            assert ticket[field] == value
+        assert ticket["status"] == "pending"
+        assert ticket["assignee"] is None
+        events = client.get(f"/api/v1/tickets/{ticket['id']}/events").json()
+        assert len(events) == 1
+        assert events[0]["from_status"] is None
+        assert events[0]["to_status"] == "pending"
+        assert events[0]["actor_type"] == ("system" if index == 0 else "企服_agent")
 
 def test_list_overdue_tickets(monkeypatch):
     # 1. 创建一条特急工单，用于测试接单超时
@@ -1351,6 +1394,62 @@ def test_parse_repair_text_empty():
         "location",
         "issue_type",
     ]    
+
+def test_acceptance_history_preserves_multiple_rework_rounds_and_is_read_only():
+    seed_demo_repair_personnel()
+    payload = {"location": "A栋302", "issue_type": "漏水", "description": "水管漏水", "priority": "urgent"}
+    created = client.post("/api/v1/tickets", json=payload)
+    assert created.status_code == 201
+    ticket_id = created.json()["id"]
+    other = client.post("/api/v1/tickets", json=payload)
+    assert other.status_code == 201
+    assert client.get(f"/api/v1/tickets/{ticket_id}/acceptance-records").json() == []
+    assert client.post(f"/api/v1/tickets/{ticket_id}/assignments", json={
+        "personnel_no": "ENG-001", "assigned_by": "负责人",
+    }).status_code == 201
+    for action in ("accept", "start-processing"):
+        assert client.post(f"/api/v1/tickets/{ticket_id}/{action}", json={"personnel_no": "ENG-001"}).status_code == 200
+
+    decisions = [
+        {"accepted": False, "accepted_by": "企服甲", "acceptance_comment": "接头仍漏水\n请更换密封件"},
+        {"accepted": False, "accepted_by": None, "acceptance_comment": "压力测试未通过，请继续排查"},
+        {"accepted": True, "accepted_by": "企服乙", "acceptance_comment": "现场复核正常，验收通过"},
+    ]
+    expected = []
+    for index, decision in enumerate(decisions):
+        repair = client.post(f"/api/v1/tickets/{ticket_id}/repair-records", json={
+            "personnel_no": "ENG-001", "repair_description": f"第{index + 1}次维修，已处理并自检", "photo_urls": [],
+        })
+        assert repair.status_code == 201
+        result = client.post(f"/api/v1/tickets/{ticket_id}/acceptance", json=decision)
+        assert result.status_code == 201
+        expected.append(result.json())
+        history = client.get(f"/api/v1/tickets/{ticket_id}/acceptance-records")
+        assert history.status_code == 200
+        assert history.json() == expected
+        assert client.get(f"/api/v1/tickets/{ticket_id}").json()["status"] == ("completed" if decision["accepted"] else "processing")
+
+    # 相同时间以主键稳定排序，不把其他工单记录或重读产生的副作用混入。
+    with TestingSessionLocal() as db:
+        db.query(AcceptanceRecord).filter(AcceptanceRecord.ticket_id == ticket_id).update({"accepted_at": datetime(2026, 11, 9, 10, 0)})
+        db.commit()
+    before_ticket = client.get(f"/api/v1/tickets/{ticket_id}").json()
+    before_events = client.get(f"/api/v1/tickets/{ticket_id}/events").json()
+    first = client.get(f"/api/v1/tickets/{ticket_id}/acceptance-records").json()
+    assert [row["id"] for row in first] == [row["id"] for row in expected]
+    assert [row["accepted"] for row in first] == [False, False, True]
+    assert client.get(f"/api/v1/tickets/{ticket_id}/acceptance-records").json() == first
+    assert client.get(f"/api/v1/tickets/{other.json()['id']}/acceptance-records").json() == []
+    assert client.get(f"/api/v1/tickets/{ticket_id}").json() == before_ticket
+    assert client.get(f"/api/v1/tickets/{ticket_id}/events").json() == before_events
+    assert len(client.get(f"/api/v1/tickets/{ticket_id}/repair-records").json()) == 3
+
+
+def test_acceptance_history_returns_404_for_missing_ticket():
+    response = client.get("/api/v1/tickets/999999/acceptance-records")
+    assert response.status_code == 404
+    assert response.json()["detail"] == "工单不存在"
+
 
 def test_submit_repair_record_success():
     """处理中工单成功提交维修反馈"""

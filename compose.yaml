@@ -1,0 +1,63 @@
+name: park-portfolio
+services:
+  backend:
+    build:
+      context: .
+      target: backend
+    restart: unless-stopped
+    environment:
+      PARK_DEMO_DATA_DIR: /data
+      PARK_MAINTENANCE_DATABASE_URL: sqlite:////data/park.db
+      PARK_AI_MODE: ${PARK_AI_MODE:-rule}
+      DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY:-}
+      QWEN_BASE_URL: ${QWEN_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}
+      QWEN_MODEL: ${QWEN_MODEL:-qwen-plus}
+      QWEN_TIMEOUT_SECONDS: "15"
+      PARK_MODEL_DAILY_LIMIT: ${PARK_MODEL_DAILY_LIMIT:-100}
+      PARK_MODEL_PER_MINUTE_LIMIT: ${PARK_MODEL_PER_MINUTE_LIMIT:-10}
+      PARK_MODEL_BUDGET_DB: /data/model-budget.sqlite3
+    volumes:
+      - demo-data:/data
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3).read()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    logging:
+      driver: json-file
+      options: {max-size: 10m, max-file: "3"}
+
+  gateway:
+    build:
+      context: .
+      target: gateway
+    restart: unless-stopped
+    depends_on:
+      backend: {condition: service_healthy}
+    environment:
+      DEMO_SITE_ADDRESS: ${DEMO_SITE_ADDRESS:-http://:8080}
+      DEMO_USER: ${DEMO_USER:-demo}
+      DEMO_PASSWORD_HASH: ${DEMO_PASSWORD_HASH:?请先生成演示密码的bcrypt哈希并写入deploy/.env.demo}
+    ports:
+      - "127.0.0.1:${DEMO_HTTP_PORT:-8080}:8080"
+    volumes:
+      - caddy-data:/data
+      - caddy-config:/config
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m
+    security_opt: [no-new-privileges:true]
+    logging:
+      driver: json-file
+      options: {max-size: 10m, max-file: "3"}
+
+volumes:
+  demo-data:
+  caddy-data:
+  caddy-config:

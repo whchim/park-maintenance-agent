@@ -13,6 +13,8 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 from pydantic import BaseModel, ValidationError
 
+from app.services.model_budget import ModelBudgetExceeded, model_call_slot
+
 
 PROMPT_VERSION = "department-v1"
 MAX_RESPONSE_BYTES = 128 * 1024
@@ -81,6 +83,11 @@ class _NoRedirect(HTTPRedirectHandler):
 
 
 def _post_completion(settings: ModelSettings, body: dict) -> dict:
+    with model_call_slot():
+        return _send_completion(settings, body)
+
+
+def _send_completion(settings: ModelSettings, body: dict) -> dict:
     request = Request(
         settings.base_url + "/chat/completions",
         data=json.dumps(body, ensure_ascii=False).encode("utf-8"),
@@ -136,6 +143,8 @@ def run_structured(agent: str, instructions: str, context: dict, output_type: ty
         if isinstance(request_id, str) and re.fullmatch(r"[a-zA-Z0-9_-]{1,120}", request_id):
             metadata["request_id"] = request_id
         return output, metadata
+    except ModelBudgetExceeded as exc:
+        metadata["fallback_reason"] = exc.reason
     except HTTPError as exc:
         metadata["fallback_reason"] = "authentication_failed" if exc.code in (401, 403) else (
             "rate_limited" if exc.code == 429 else "provider_http_error")
@@ -217,6 +226,9 @@ def run_tool_turn(messages: list[dict], tools: list[dict], *, final_only: bool =
                         usage={k: v for k in ("prompt_tokens", "completion_tokens", "total_tokens")
                                if type(v := usage.get(k)) is int and v >= 0} if isinstance(usage, dict) else {})
         return result, metadata
+    except ModelBudgetExceeded as exc:
+        metadata["fallback_reason"] = exc.reason
+        metadata["request_attempted"] = False
     except HTTPError as exc:
         metadata["fallback_reason"] = "authentication_failed" if exc.code in (401, 403) else (
             "rate_limited" if exc.code == 429 else "provider_http_error")

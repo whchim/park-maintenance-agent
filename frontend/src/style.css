@@ -229,6 +229,19 @@ kbd { font-size: 10px; border: 1px solid #dfe5e7; background: #fff; border-radiu
 .repair-feedback-history article { padding: 12px; margin-top: 9px; border: 1px solid var(--line); border-radius: 6px; }
 .repair-feedback-history article > p { font-size: 12px; line-height: 1.7; overflow-wrap: anywhere; }
 
+.acceptance-history { margin-top: 24px; }
+.acceptance-history-heading, .acceptance-record-heading { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+.acceptance-history-heading h4 { margin: 0; font-size: 13px; color: #536269; }
+.acceptance-history-list { list-style: none; padding: 0; margin: 12px 0 0; }
+.acceptance-history-item { margin-top: 10px; padding: 14px; border: 1px solid var(--line); border-radius: 6px; }
+.acceptance-record-heading { font-size: 12px; }
+.acceptance-result { padding: 4px 8px; border-radius: 4px; font-size: 11px; }
+.acceptance-result.passed { color: #286548; background: #eaf5ee; }
+.acceptance-result.returned { color: #97431f; background: #fff0e5; }
+.acceptance-record-meta { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 10px; color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
+.acceptance-record-comment { margin-top: 12px; }
+.acceptance-record-comment p { margin: 5px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; line-height: 1.7; }
+
 .business-workspace { display: grid; gap: 20px; }
 .workspace-overview { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
 .workspace-overview > p { flex: 1 1 280px; margin: 0; color: #66767b; font-size: 12px; line-height: 1.7; }

@@ -1,0 +1,9 @@
+# 必须与根目录 compose.yaml 一起使用；域名指向服务器后启用。
+services:
+  gateway:
+    environment:
+      DEMO_SITE_ADDRESS: ${DEMO_DOMAIN:?公网部署必须设置DEMO_DOMAIN为你拥有的真实域名}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"

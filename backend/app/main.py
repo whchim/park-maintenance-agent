@@ -73,11 +73,10 @@ from app.services.repair_service import (
 
 from app.services.ticket_service import (
     accept_ticket,
+    create_ticket_from_confirmed,
     start_processing_ticket,
     transition_ticket_with_event,
 )
-from app.services.ticket_event_service import record_ticket_event
-from app.services.priority_service import classify_priority  # 根据描述判断优先级
 from app.services.sla_service import check_ticket_sla  # 检查 SLA 超时
 from app.services.acceptance_service import create_acceptance_record # 创建验收记录
 from app.services.repair_personnel_service import list_active_personnel
@@ -657,59 +656,10 @@ def create_ticket(
     ticket: TicketCreate,
     db: Session = Depends(get_db),
 ):
-    # 生成工单编号
-    now = datetime.now()
-
-    # 先获取当天已有工单数量，生成当天递增编号
-    today_prefix = f"WX{now:%Y%m%d}"
-    today_count = (
-        db.query(Ticket)
-        .filter(Ticket.ticket_no.like(f"{today_prefix}%"))
-        .count()
-    )
-
-    ticket_no = f"{today_prefix}{today_count + 1:04d}"
-
-    # 1. 根据报修描述自动识别优先级
-    auto_priority = classify_priority(ticket.description)
-
-    # 2. 定义优先级等级，数字越大表示越紧急
-    priority_level = {
-        "normal": 1,
-        "urgent": 2,
-        "critical": 3,
-    }
-
-    # 3. 比较用户选择的优先级和系统识别的优先级
-    user_priority = ticket.priority
-
-    if priority_level[auto_priority.value] > priority_level[user_priority.value]:
-        final_priority = auto_priority
-    else:
-        final_priority = user_priority
-
-    # 4. 创建数据库工单对象
-    new_ticket = Ticket(
-        ticket_no=ticket_no,
-        location=ticket.location,
-        issue_type=ticket.issue_type,
-        description=ticket.description,
-        priority=final_priority.value,
-        status=TicketStatus.PENDING.value,
-    )
-
-    # 将对象添加到数据库会话
-    db.add(new_ticket)
-
+    """保存人工确认的报修信息，与 Web/飞书协同确认共用建单规则。"""
     try:
-        db.flush()
-        record_ticket_event(
-            db,
-            new_ticket,
-            from_status=None,
-            to_status=TicketStatus.PENDING,
-            reason="创建维修工单",
-        )
+        # 公共服务生成编号及创建事件；附件绑定失败时整个事务一起回滚。
+        new_ticket = create_ticket_from_confirmed(db, ticket)
         bind_images(db, ticket.attachment_ids, purpose="intake", ticket_id=new_ticket.id)
         db.commit()
         db.refresh(new_ticket)
@@ -1094,6 +1044,21 @@ def submit_repair_record(
         photo_urls=photo_urls,
         submitted_at=record.submitted_at,
     )
+
+@app.get("/api/v1/tickets/{ticket_id}/acceptance-records", response_model=list[AcceptanceRecordResponse])
+def ticket_acceptance_records(ticket_id: int, db: Session = Depends(get_db)):
+    """按验收时间返回全部通过及退回记录，读取不会改变工单状态。"""
+    if db.get(Ticket, ticket_id) is None:
+        raise HTTPException(404, "工单不存在")
+    records = db.query(AcceptanceRecord).filter(
+        AcceptanceRecord.ticket_id == ticket_id
+    ).order_by(AcceptanceRecord.accepted_at, AcceptanceRecord.id).all()
+    return [AcceptanceRecordResponse(
+        id=record.id, ticket_id=record.ticket_id,
+        acceptance_comment=record.acceptance_comment, accepted_by=record.accepted_by,
+        accepted=record.accepted, accepted_at=record.accepted_at,
+    ) for record in records]
+
 
 # 提交验收意见
 @app.post(

@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:acceptance-history": "node --test tests/acceptance-history.test.mjs",
+    "test:acceptance-form": "node --test tests/acceptance-form.test.mjs"
   },
   "dependencies": {
     "@vitejs/plugin-vue": "latest",

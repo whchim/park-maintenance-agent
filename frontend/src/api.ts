@@ -195,6 +195,16 @@ export interface RepairFeedback {
 }
 export const getTicketRepairs = (id: number) => request<RepairFeedback[]>(`/api/v1/tickets/${id}/repair-records`)
 
+export interface AcceptanceRecord {
+  id: number
+  ticket_id: number
+  acceptance_comment: string
+  accepted_by: string | null
+  accepted: boolean
+  accepted_at: string
+}
+export const getTicketAcceptances = (id: number) => request<AcceptanceRecord[]>(`/api/v1/tickets/${id}/acceptance-records`)
+
 export interface AgentCapability {
   agent_name: string
   department: string

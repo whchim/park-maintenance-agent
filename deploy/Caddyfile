@@ -1,0 +1,28 @@
+{$DEMO_SITE_ADDRESS:http://:8080} {
+    # 官方 Basic Auth，密码只保存 bcrypt 哈希；页面、API、图片及健康接口全部保护。
+    basic_auth {
+        {$DEMO_USER:demo} {$DEMO_PASSWORD_HASH}
+    }
+    request_body {
+        max_size 11MB
+    }
+    header {
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy no-referrer
+        Cache-Control "no-store"
+        -Server
+    }
+    encode zstd gzip
+    @business path /api /api/* /health /docs /docs/* /redoc /openapi.json
+    handle @business {
+        reverse_proxy backend:8000 {
+            # 演示访问口令不传递给业务后端或模型服务。
+            header_up -Authorization
+        }
+    }
+    handle {
+        root * /srv
+        file_server
+    }
+}
