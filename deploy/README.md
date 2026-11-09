@@ -64,6 +64,23 @@ docker compose --env-file deploy/.env.demo -f compose.yaml -f deploy/compose.pub
 
 Caddy 负责域名入口的 HTTPS 和续期。只有在域名解析、端口可达、证书签发成功后，才算完成公网部署；浏览器访问 `https://你的真实域名` 验证。不要把 HTTP 本机配置改成 `0.0.0.0:8080` 来替代 HTTPS。
 
+## 3.1 没有域名时的临时 IP 访问
+
+没有域名时可临时使用服务器 IP 访问 HTTP。将 `deploy/.env.demo` 中的端口绑定改为：
+
+```dotenv
+DEMO_BIND_HOST=0.0.0.0
+DEMO_HTTP_PORT=80
+```
+
+然后启动：
+
+```sh
+docker compose --env-file deploy/.env.demo up -d --build
+```
+
+访问 `http://服务器公网IP`。此模式没有 HTTPS，适合短期求职展示；必须保留演示密码，云安全组只开放 TCP 80，后端8000不开放。获得域名后切回 `DEMO_BIND_HOST=127.0.0.1`，按上一节使用公网覆盖配置和 HTTPS。
+
 ## 4. 可选：启用真实模型
 
 默认 `PARK_AI_MODE=rule`，没有远端模型请求。需要真实千问时，在私有部署配置中填写 Key、地域匹配的官方入口及账号可用模型，再设 `PARK_AI_MODE=qwen` 并重新执行对应的 `up -d` 命令。不要将 Key 放进前端环境变量。

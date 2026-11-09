@@ -45,7 +45,7 @@ services:
       DEMO_USER: ${DEMO_USER:-demo}
       DEMO_PASSWORD_HASH: ${DEMO_PASSWORD_HASH:?请先生成演示密码的bcrypt哈希并写入deploy/.env.demo}
     ports:
-      - "127.0.0.1:${DEMO_HTTP_PORT:-8080}:8080"
+      - "${DEMO_BIND_HOST:-127.0.0.1}:${DEMO_HTTP_PORT:-8080}:8080"
     volumes:
       - caddy-data:/data
       - caddy-config:/config
